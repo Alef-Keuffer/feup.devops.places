@@ -6,6 +6,7 @@ input-files:
   - ${.}/3-services.md
   - ${.}/4a-service-apis-rest.md
   - ${.}/4b-service-apis-messaging.md
+  - ${.}/5-open-points.md
   - ${.}/9-references-and-appendix.md
 output-file: ${.}/places-delivery-1.pdf
 pdf-engine: xelatex
