@@ -22,3 +22,14 @@ This writes `report/places-delivery-1.pdf`. `report/pandoc.yaml` lists the secti
 - **Citations**: add the entry to `report/references.bib` and cite it as `[@key]` or `[@key, ch. 3]`. Pandoc's citeproc formats the citation and the reference list.
 - **Diagrams**: draw them in TikZ, inside a raw LaTeX block (```` ```{=latex} ````). TikZ needs nothing beyond xelatex and gives vector figures. Copy the context diagram in `report/1-application-requirements.md` as a starting point, and add any TikZ library you need to `report/preamble.tex`.
 - **Terms**: use the terms in `GLOSSARY.md`, and none of the words it lists under *Avoid*.
+
+## Check the report
+
+Ask your coding agent to run the consistency check (in Claude Code, `/consistency-check`). The skill lives in `.agents/skills/consistency-check/`, where Codex, Cursor, Gemini CLI and Copilot look for skills; Claude Code only reads `.claude/skills/`, so `.claude/skills/consistency-check` is a symlink to it, and `AGENTS.md` points any other agent at it. On Windows, Git checks the symlink out as a plain file unless symlinks are on: turn on Developer Mode and clone with `git clone -c core.symlinks=true`. Without an agent, `SKILL.md` also reads as a checklist. It runs the mechanical checks, then reviews the report against `GLOSSARY.md`, the ADRs and the latest grilling record, and lists each finding with its file and line, the problem and a suggested fix. It changes nothing.
+
+The mechanical checks also run on their own, from the repo root (they need pandoc and xelatex as above, and Node for `npx` once `openapi.yaml` exists):
+
+```sh
+.agents/skills/consistency-check/check.sh             # Avoid words, OpenAPI lint, PDF build and citations
+.agents/skills/consistency-check/check.sh --self-test # the script's own test
+```
