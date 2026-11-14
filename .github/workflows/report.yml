@@ -1,0 +1,44 @@
+# Builds the report PDF on each push to main and each pull request; the run's page lists it under Artifacts.
+# A pushed delivery-* tag also attaches the PDF to a release of that tag.
+name: Report
+
+on:
+  push:
+    branches: [main]
+    tags: ['delivery-*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pdf:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pandoc/actions/setup@v1
+        with:
+          version: '3.13'
+      - name: Install xelatex and the LaTeX packages the report uses
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lmodern texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended
+      - run: pandoc -d report/pandoc.yaml
+      - uses: actions/upload-artifact@v7
+        with:
+          path: report/places-delivery-1.pdf
+          archive: false
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/delivery-')
+    needs: pdf
+    runs-on: ubuntu-24.04
+    # Only this job writes, so the build's actions never hold a write token.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: places-delivery-1.pdf
+      - run: gh release create "$GITHUB_REF_NAME" ./*.pdf --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
