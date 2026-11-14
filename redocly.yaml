@@ -1,0 +1,4 @@
+extends:
+  - recommended
+rules:
+  info-license: off  # the repository has no license yet; add one to info and drop this line
