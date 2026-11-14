@@ -1,6 +1,6 @@
 # Open points
 
-Delivery 1 leaves some points open, and this section collects them: a gap that no group covers, what delivery 1 leaves out, and the questions we have asked the professor and the other groups. Wiegers and Beatty advise marking each piece of information that is still missing, rather than leaving the gap unstated, and resolving it before the requirements it affects are implemented [@wiegers2013, ch. 10]. For each question, this section gives the position the report takes until the answer comes.
+Delivery 1 leaves some points open, and this section collects them: a gap that no group covers, what delivery 1 leaves out, and the questions we have asked the professor and the other groups. Wiegers and Beatty advise marking each piece of information that is still missing, rather than leaving the gap unstated, and resolving it before the requirements it affects are implemented [@wiegers2013, chs. 10–11]. For each question, this section gives the position the report takes until the answer comes.
 
 ## No group handles refunds
 
