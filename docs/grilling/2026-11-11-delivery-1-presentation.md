@@ -1,5 +1,7 @@
 # Grilling record: DCN Delivery 1 presentation (2026-11-11)
 
+> Superseded by `2026-11-14-delivery-1-report.md`: its decisions and questions for later replace the ones below.
+
 Goal: prepare the Places subsystem (group 5) for presentation in today's lecture. The report is due 2026-11-18 and covers application requirements, system operations, services, and service APIs and collaborations, with every architectural decision justified.
 
 Vocabulary: see `GLOSSARY.md`. Decisions: see `docs/adr/0001` to `0003`.

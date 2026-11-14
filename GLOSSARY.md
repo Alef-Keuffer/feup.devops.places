@@ -1,6 +1,6 @@
 # Places
 
-The Places subsystem (group 5) of the Event Management system: the catalogue of venues promoters can hold events in, and the calendar of which rooms are taken when.
+The Places subsystem (group 5) of the Event Management system: the catalogue of venues promoters can hold events in, and the calendar of which venues are taken when.
 
 ## Language
 
@@ -9,21 +9,33 @@ Umbrella word used in requirements for "somewhere an event can happen"; in the m
 _Avoid_: Location, space (when a precise term is meant)
 
 **Venue**:
-A physical site submitted to the platform, with an address, images and a Rating, containing one or more Rooms.
+A physical site submitted to the platform, with an address, images and a Rating; the unit a Promoter books for an Event.
 _Avoid_: Place (when the site specifically is meant), building
 
 **Room**:
-The bookable unit of a Venue, with its own capacity, area, layout, equipment and price.
+A space inside a Venue, shown as part of the Venue's description; a Room is never booked on its own.
 _Avoid_: Hall, space
 
+**Promoter**:
+A user who organises Events, books Venues for them and rates the Venues they booked.
+_Avoid_: Organiser, client
+
 **Venue Manager**:
-The person who submits a Venue to the platform and is the only one allowed to change it and its Rooms.
+The person who submits a Venue to the platform and is the only one allowed to change it and its Rooms; the same person may also be a Promoter.
 _Avoid_: Owner, landlord, admin
 
+**Listed**:
+A Venue that appears in search and accepts new Bookings; a Venue is Listed as soon as it is submitted.
+_Avoid_: Published, active, approved
+
+**Unlisted**:
+A Venue its Venue Manager has taken out of search; it accepts no new Bookings, but its existing Bookings stand.
+_Avoid_: Hidden, archived, deleted
+
 **Booking**:
-A Room reserved for one Event over a period; Rooms are available exactly when no Booking overlaps the requested period.
+A Venue reserved for one Event over consecutive whole days; an Event holds at most one Booking, and a Venue is available exactly when no Booking overlaps the requested days.
 _Avoid_: Reservation, schedule entry
 
 **Rating**:
-A Venue's average review score, as last reported by the Reviews subsystem.
+A Venue's average score from Promoters' reviews, as last reported by the Reviews subsystem.
 _Avoid_: Reputation, score
