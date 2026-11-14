@@ -20,6 +20,8 @@ This writes `report/places-delivery-1.pdf`. `report/pandoc.yaml` lists the secti
 
 CI (`.github/workflows/report.yml`) builds the same PDF on each push to main and each pull request. To get it without building, open the run in the repo's Actions tab and download it under Artifacts.
 
+To hand in a delivery, tag the commit and push the tag, e.g. `git tag delivery-1 && git push origin delivery-1`. CI builds the PDF and attaches it to a release of that tag, so this link works for anyone, without a GitHub account, and doesn't expire: `https://github.com/Alef-Keuffer/feup.devops.places/releases/download/delivery-1/places-delivery-1.pdf`. Artifact links need a GitHub login and expire after 90 days, so share this one instead.
+
 ## Write the report
 
 - **Citations**: add the entry to `report/references.bib` and cite it as `[@key]` or `[@key, ch. 3]`. Pandoc's citeproc formats the citation and the reference list.
