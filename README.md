@@ -4,6 +4,7 @@ Group 5's work on the Places subsystem of the Event Management system (DevOps an
 
 - `report/`: the Delivery 1 report, one Markdown file per section.
 - `GLOSSARY.md`: the terms the report and the code use.
+- `openapi.yaml`: Places' REST API. Check it with `npx @redocly/cli lint openapi.yaml`; the report's appendix includes it as it is.
 - `docs/adr/`: architecture decisions and their reasons.
 - `docs/grilling/`: the decision records the ADRs and tickets come from.
 
