@@ -1,0 +1,27 @@
+# Builds the report PDF on each push to main and each pull request; the run's page lists it under Artifacts.
+name: Report
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pdf:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pandoc/actions/setup@v1
+        with:
+          version: '3.13'
+      - name: Install xelatex and the LaTeX packages the report uses
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lmodern texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended
+      - run: pandoc -d report/pandoc.yaml
+      - uses: actions/upload-artifact@v7
+        with:
+          path: report/places-delivery-1.pdf
+          archive: false
+          if-no-files-found: error

@@ -18,6 +18,8 @@ pandoc -d report/pandoc.yaml
 
 This writes `report/places-delivery-1.pdf`. `report/pandoc.yaml` lists the section files in order, so add any new file there.
 
+CI (`.github/workflows/report.yml`) builds the same PDF on each push to main and each pull request. To get it without building, open the run in the repo's Actions tab and download it under Artifacts.
+
 ## Write the report
 
 - **Citations**: add the entry to `report/references.bib` and cite it as `[@key]` or `[@key, ch. 3]`. Pandoc's citeproc formats the citation and the reference list.
