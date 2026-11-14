@@ -1,0 +1,31 @@
+# Builds the report: pandoc -d report/pandoc.yaml
+# Sections are concatenated in this order; a new section file goes here.
+input-files:
+  - ${.}/1-application-requirements.md
+  - ${.}/2-system-operations.md
+  - ${.}/3-services.md
+  - ${.}/4a-service-apis-rest.md
+  - ${.}/4b-service-apis-messaging.md
+  - ${.}/9-references-and-appendix.md
+output-file: ${.}/places-delivery-1.pdf
+pdf-engine: xelatex
+citeproc: true
+bibliography: ${.}/references.bib
+include-in-header: ${.}/preamble.tex
+number-sections: true
+table-of-contents: true
+metadata:
+  title: Places
+  subtitle: "Group 5 — the Places subsystem of the Event Management system"
+  author:
+    - Alef Keuffer
+    - Daniella De Leon
+    - Al Mahmud Sarker
+    - Sergio Miguel Cardoso Almeida
+    - Afonso da Cruz Pimenta
+  date: "DevOps and Cloud Computing — DCN Delivery 1 — 18 November 2026"
+  link-citations: true
+variables:
+  classoption: titlepage
+  geometry: margin=2.5cm
+  colorlinks: true
