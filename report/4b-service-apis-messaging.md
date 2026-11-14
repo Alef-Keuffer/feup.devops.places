@@ -8,7 +8,7 @@ Besides its REST API, Places talks to the other groups through messages on the b
 
 All four are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, called the *Places topic* here. It reads *Event cancelled* from the *Log topic*, on which Promoters and Events (G2) publishes its Event messages, and *Rating changed* from a channel of Reviews (G1), called the *Reviews topic* here. G4 will name the channels and choose the broker.
 
-Messages are JSON, a text format every group's stack can read and write [@richardson2018, sec. 3.1.4], and follow the conventions of NFR-9: UUIDs for ids, ISO 8601 for dates and times, whole days in the Europe/Lisbon time zone, and amounts in EUR. Each has a `type` field naming the message, so that a consumer can tell the messages on a channel apart without relying on a feature of a broker no one has chosen yet. Every message Places sends carries the Booking id (NFR-6).
+Messages are JSON, a text format every group's stack can read and write [@richardson2018, sec. 3.1.4], and follow the conventions of NFR-9 that the REST API section proposes (Table \ref{tab:conventions}): UUIDs for ids, ISO 8601 for dates and times, whole days in the Europe/Lisbon time zone, and amounts in EUR as decimal strings with two decimals. Each has a `type` field naming the message, so that a consumer can tell the messages on a channel apart without relying on a feature of a broker no one has chosen yet. Every message Places sends carries the Booking id (NFR-6).
 
 Places reads only the fields it needs from a message, and ignores any others, along with messages of types it doesn't handle, such as *Event scheduled* on the Log topic (FR-27). This is the Robustness principle Richardson recommends for evolving an API [@richardson2018, sec. 3.1.3]. We ask the consumers of Places' messages to read them the same way, so that Places can add a field without breaking them.
 
@@ -36,7 +36,7 @@ Sent when
 | `venueManagerId` | UUID | The Venue's Venue Manager. |
 | `firstDay` | date | The first day of the Booking. |
 | `lastDay` | date | The last day of the Booking, included. |
-| `amount` | number | The number of days × the Venue's price per day when the Booking was created, in EUR (FR-22). |
+| `amount` | string | The number of days × the Venue's price per day when the Booking was created (FR-22): an amount in EUR as a decimal string with two decimals, such as `"800.00"`. |
 
 : The fields of *Booking confirmed*. \label{tab:booking-confirmed}
 
@@ -61,7 +61,7 @@ Sent when
 | `eventId` | UUID | The Event that held it. |
 | `promoterId` | UUID | The Event's Promoter. |
 | `venueId` | UUID | The Venue that was booked. |
-| `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation or through *Event cancelled*; `venueManager` when the Venue's Venue Manager did. |
+| `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation or through *Event cancelled*; `venue-manager` when the Venue's Venue Manager did. The values are those of the `X-Service-Name` and `X-User-Roles` headers (Table \ref{tab:identity}). |
 | `reason` | string | The reason given, left out when none was. |
 
 : The fields of *Booking cancelled*. \label{tab:booking-cancelled}
@@ -240,8 +240,8 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 
 | # | Flow | What it carries | Why REST or the broker |
 |----|---------------------------|-------------------------------------|--------------------------------------|
-| 1 | Promoter or Venue Manager → Gateway → Places | Every user request, with the user id and roles the Gateway forwards: searches, availability checks, Venue changes, a Venue's Bookings and their cancellation. | REST. A user waits for the answer. |
-| 2 | Events → Places | Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events must know at once whether it has the Venue or the request is a conflict, to tell the Promoter. A cancellation answers only once it is done, so a Booking request sent straight after can't hit the old Booking (FR-25). |
+| 1 | Promoter or Venue Manager → Gateway → Places | Every user request, with the user id and roles the Gateway forwards: searches, reading a Venue, availability checks, Venue changes, a Venue's Bookings and their cancellation. | REST. A user waits for the answer. |
+| 2 | Events → Places | Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
 | 3 | Tickets → Places | A Venue by its id (`getVenue`), for its name and address. | REST. Tickets needs them only when it prints tickets, and Places publishes no messages about Venues that Tickets could keep a copy from. |
 | 4 | Events → Log topic → Places | *Event cancelled* (`handleEventCancelled`). | Broker. Events states the fact once for every group that cares, and needs no answer. |
 | 5 | Reviews → Reviews topic → Places | *Rating changed* (`handleRatingChanged`). | Broker. Places keeps a copy of the Rating, so search doesn't call Reviews. |
@@ -250,4 +250,5 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 
 : The flows of Figure \ref{fig:collaborations}. \label{tab:flows}
 
+Events and Tickets, in flows 2 and 3, call Places directly rather than through the Gateway, and name themselves with the `X-Service-Name` header (Table \ref{tab:identity}).
 We have asked G3 to confirm that Tickets reads a Venue with a REST GET.
