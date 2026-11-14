@@ -12,8 +12,7 @@ info:
     ## Identity
 
     Users reach Places only through the Gateway (G4). The Gateway checks the
-    user's token, removes any `X-User-Id`, `X-User-Roles` or `X-Service-Name`
-    header the user sent, and forwards the request with:
+    user's token and forwards the request with:
 
     - `X-User-Id`: the user's id;
     - `X-User-Roles`: the user's roles, comma-separated, from `promoter` and
@@ -22,8 +21,9 @@ info:
     Events (G2) and Tickets (G3) call Places directly on the platform's
     network and name themselves in `X-Service-Name`: `events` or `tickets`.
     Places trusts these headers because only the Gateway and the platform's
-    services can reach it. It rejects a request that carries neither a user
-    nor a service with 401.
+    services can reach it, and it relies on the Gateway to remove any of the
+    three headers that a user sends. A request needs either both user
+    headers or `X-Service-Name`; Places rejects any other with 401.
 
     Each operation's `security` says who may call it: a user, with the roles
     listed (an empty list means any role), or a named service. Where the
@@ -44,8 +44,8 @@ info:
       operation that returns it; every other problem has the type
       `about:blank`, and its `title` is the HTTP status phrase.
 servers:
-  - url: http://places:8080
-    description: Places on the platform's network, reached by the Gateway, Events and Tickets.
+  - url: /
+    description: Places' address on the platform's network, reached by the Gateway, Events and Tickets.
 tags:
   - name: Venues
     description: The Venue catalogue, search and availability.
@@ -72,14 +72,12 @@ paths:
             First day of the date window. `from`, `to` and `days` form one
             filter: give all three or none.
           schema:
-            type: string
-            format: date
+            $ref: '#/components/schemas/Day'
         - name: to
           in: query
           description: Last day of the date window, included.
           schema:
-            type: string
-            format: date
+            $ref: '#/components/schemas/Day'
         - name: days
           in: query
           description: >-
@@ -102,7 +100,7 @@ paths:
             $ref: '#/components/schemas/Amount'
         - name: city
           in: query
-          description: Matches a Venue in this city, ignoring case.
+          description: Matches a Venue in this city.
           schema:
             type: string
         - name: minRating
@@ -284,7 +282,15 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/VenueUnlisted'
+          description: '`/problems/venue-unlisted`: the Venue is already Unlisted.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/venue-unlisted
+                title: The Venue is Unlisted
+                status: 409
   /venues/{venueId}/relist:
     parameters:
       - $ref: '#/components/parameters/VenueId'
@@ -341,15 +347,13 @@ paths:
           in: query
           required: true
           schema:
-            type: string
-            format: date
+            $ref: '#/components/schemas/Day'
         - name: lastDay
           in: query
           required: true
           description: Not before `firstDay`.
           schema:
-            type: string
-            format: date
+            $ref: '#/components/schemas/Day'
       responses:
         '200':
           description: The Venue's availability on those days.
@@ -441,7 +445,7 @@ paths:
 
             - `/problems/days-taken`: a Booking of the Venue overlaps the days;
             - `/problems/event-already-booked`: the Event already has a
-              Booking, whose id is in `bookingId`;
+              Booking;
             - `/problems/venue-unlisted`: the Venue is Unlisted.
           content:
             application/problem+json:
@@ -464,40 +468,22 @@ paths:
                 status: 422
   /bookings/{bookingId}:
     parameters:
-      - name: bookingId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/BookingId'
     delete:
       tags: [Bookings]
       operationId: cancelBooking
-      summary: Cancel a Booking
+      summary: Cancel an Event's Booking
       description: |
         Cancels the Booking and answers only once its days are free, so a
         Booking request sent straight after can take them. Places publishes
-        *Booking cancelled*, saying who cancelled it (Events or the Venue
-        Manager) and the reason, if one was given. A Booking that has
-        already been cancelled no longer exists, so a repeated call gets 404.
+        *Booking cancelled*, saying that Events cancelled it, with the
+        reason if one was given.
 
-        Events calls this to cancel its Event's Booking (`cancelBooking`);
-        a Venue Manager calls it to cancel a Booking at their Venue
-        (`cancelVenueBooking`).
-
-        **Access:** Events, or a user with the `venue-manager` role who is
-        the Venue Manager of the Booking's Venue.
+        **Access:** Events.
       security:
         - service: [events]
-        - userId: []
-          userRoles: [venue-manager]
       parameters:
-        - name: reason
-          in: query
-          description: Why the Booking is cancelled, passed on in *Booking cancelled*.
-          schema:
-            type: string
-            maxLength: 500
+        - $ref: '#/components/parameters/Reason'
       responses:
         '204':
           description: The Booking was cancelled.
@@ -510,15 +496,44 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: '`/problems/booking-ended`: the Booking has ended.'
+          $ref: '#/components/responses/BookingEnded'
+  /venues/{venueId}/bookings/{bookingId}:
+    parameters:
+      - $ref: '#/components/parameters/VenueId'
+      - $ref: '#/components/parameters/BookingId'
+    delete:
+      tags: [Bookings]
+      operationId: cancelVenueBooking
+      summary: Cancel a Booking at a Venue
+      description: |
+        Cancels a Booking at the Venue, for something unforeseen. Places
+        publishes *Booking cancelled*, saying that the Venue Manager
+        cancelled it, with the reason if one was given.
+
+        **Access:** a user with the `venue-manager` role who is the Venue's
+        Venue Manager.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      parameters:
+        - $ref: '#/components/parameters/Reason'
+      responses:
+        '204':
+          description: The Booking was cancelled.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No Venue has the id `venueId`, or it has no Booking with the id `bookingId`.
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-              example:
-                type: /problems/booking-ended
-                title: The Booking has ended
-                status: 409
+        '409':
+          $ref: '#/components/responses/BookingEnded'
 components:
   securitySchemes:
     userId:
@@ -546,6 +561,20 @@ components:
       schema:
         type: string
         format: uuid
+    BookingId:
+      name: bookingId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Reason:
+      name: reason
+      in: query
+      description: Why the Booking is cancelled, passed on in *Booking cancelled*.
+      schema:
+        type: string
+        maxLength: 500
   responses:
     BadRequest:
       description: A parameter or the request body is malformed or out of range.
@@ -573,17 +602,22 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
-    VenueUnlisted:
-      description: '`/problems/venue-unlisted`: the Venue is Unlisted.'
+    BookingEnded:
+      description: '`/problems/booking-ended`: the Booking has ended.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
           example:
-            type: /problems/venue-unlisted
-            title: The Venue is Unlisted
+            type: /problems/booking-ended
+            title: The Booking has ended
             status: 409
   schemas:
+    Day:
+      type: string
+      format: date
+      description: An ISO 8601 calendar date, meaning that whole day in the Europe/Lisbon time zone.
+      examples: ['2027-06-06']
     Amount:
       type: string
       description: An amount in EUR, with two decimals.
@@ -664,15 +698,18 @@ components:
       allOf:
         - $ref: '#/components/schemas/VenueDetails'
       required: [name, address, coordinates, capacity, area, pricePerDay, type, images, equipment, rooms]
+      unevaluatedProperties: false
     VenueChanges:
-      description: New values for any of a Venue's details.
+      description: New values for any of a Venue's details. Any other property is rejected.
       allOf:
         - $ref: '#/components/schemas/VenueDetails'
       minProperties: 1
+      unevaluatedProperties: false
     Venue:
       description: A Venue, Listed or Unlisted.
+      required: [name, address, coordinates, capacity, area, pricePerDay, type, images, equipment, rooms]
       allOf:
-        - $ref: '#/components/schemas/VenueSubmission'
+        - $ref: '#/components/schemas/VenueDetails'
         - type: object
           required: [id, venueManagerId, listed, roomCount]
           properties:
@@ -720,8 +757,7 @@ components:
           type: array
           description: The days a Booking covers; empty when `available` is true.
           items:
-            type: string
-            format: date
+            $ref: '#/components/schemas/Day'
     BookingRequest:
       type: object
       required: [eventId, promoterId, venueId, firstDay, lastDay]
@@ -737,11 +773,9 @@ components:
           type: string
           format: uuid
         firstDay:
-          type: string
-          format: date
+          $ref: '#/components/schemas/Day'
         lastDay:
-          type: string
-          format: date
+          $ref: '#/components/schemas/Day'
           description: Not before `firstDay`.
     Booking:
       allOf:
@@ -771,7 +805,3 @@ components:
         instance:
           type: string
           format: uri-reference
-        bookingId:
-          type: string
-          format: uuid
-          description: With `/problems/event-already-booked`, the Event's Booking.
