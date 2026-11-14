@@ -1,0 +1,777 @@
+openapi: 3.1.2
+info:
+  title: Places API
+  version: 0.1.0
+  summary: The Venue catalogue and the Booking calendar of the Event Management system (group 5).
+  description: |
+    Places keeps the catalogue of Venues that Promoters can hold Events in,
+    and the calendar of which Venue is booked on which days. Each
+    `operationId` is the name of the system operation it implements in the
+    Delivery 1 report.
+
+    ## Identity
+
+    Users reach Places only through the Gateway (G4). The Gateway checks the
+    user's token, removes any `X-User-Id`, `X-User-Roles` or `X-Service-Name`
+    header the user sent, and forwards the request with:
+
+    - `X-User-Id`: the user's id;
+    - `X-User-Roles`: the user's roles, comma-separated, from `promoter` and
+      `venue-manager`.
+
+    Events (G2) and Tickets (G3) call Places directly on the platform's
+    network and name themselves in `X-Service-Name`: `events` or `tickets`.
+    Places trusts these headers because only the Gateway and the platform's
+    services can reach it. It rejects a request that carries neither a user
+    nor a service with 401.
+
+    Each operation's `security` says who may call it: a user, with the roles
+    listed (an empty list means any role), or a named service. Where the
+    caller must also be the Venue's Venue Manager, the operation says so;
+    Places checks the caller's id against the Venue's `venueManagerId` and
+    answers 403 if they differ.
+
+    ## Conventions
+
+    - Ids are UUIDs.
+    - Days are ISO 8601 calendar dates, such as `2027-06-06`, and each is a
+      whole day in the Europe/Lisbon time zone. A Booking's `firstDay` and
+      `lastDay` are both included.
+    - Amounts are in EUR, as decimal strings with two decimals, such as
+      `"800.00"`.
+    - Errors are RFC 9457 `application/problem+json` documents. A problem
+      that a caller may need to act on has its own `type`, listed with the
+      operation that returns it; every other problem has the type
+      `about:blank`, and its `title` is the HTTP status phrase.
+servers:
+  - url: http://places:8080
+    description: Places on the platform's network, reached by the Gateway, Events and Tickets.
+tags:
+  - name: Venues
+    description: The Venue catalogue, search and availability.
+  - name: Bookings
+    description: Booking requests and cancellations, and a Venue's Bookings.
+paths:
+  /venues:
+    get:
+      tags: [Venues]
+      operationId: searchVenues
+      summary: Search the Listed Venues
+      description: |
+        Returns the Listed Venues that match every filter given. Unlisted
+        Venues are never returned.
+
+        **Access:** any user.
+      security:
+        - userId: []
+          userRoles: []
+      parameters:
+        - name: from
+          in: query
+          description: >-
+            First day of the date window. `from`, `to` and `days` form one
+            filter: give all three or none.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Last day of the date window, included.
+          schema:
+            type: string
+            format: date
+        - name: days
+          in: query
+          description: >-
+            Number of consecutive days the Venue must have free of Bookings
+            inside the window. At least 1, and no more than the window's
+            length.
+          schema:
+            type: integer
+            minimum: 1
+        - name: minCapacity
+          in: query
+          description: Matches a Venue whose capacity is at least this.
+          schema:
+            type: integer
+            minimum: 1
+        - name: maxPricePerDay
+          in: query
+          description: Matches a Venue whose price per day is at most this.
+          schema:
+            $ref: '#/components/schemas/Amount'
+        - name: city
+          in: query
+          description: Matches a Venue in this city, ignoring case.
+          schema:
+            type: string
+        - name: minRating
+          in: query
+          description: >-
+            Matches a Venue whose Rating is at least this. A Venue with no
+            Rating yet doesn't match.
+          schema:
+            type: number
+        - name: type
+          in: query
+          description: Matches a Venue of this type.
+          schema:
+            $ref: '#/components/schemas/VenueType'
+      responses:
+        '200':
+          description: The matching Venues.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Venue'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Venues]
+      operationId: submitVenue
+      summary: Submit a Venue
+      description: |
+        Creates a Venue, Listed at once, with the caller as its Venue
+        Manager. The Venue Manager can't be changed later.
+
+        **Access:** a user with the `venue-manager` role.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenueSubmission'
+      responses:
+        '201':
+          description: The Venue was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /venues/{venueId}:
+    parameters:
+      - $ref: '#/components/parameters/VenueId'
+    get:
+      tags: [Venues]
+      operationId: getVenue
+      summary: Get a Venue
+      description: |
+        Returns the Venue, Listed or Unlisted. Tickets uses it for the
+        Venue's name and address.
+
+        **Access:** any user, or Tickets.
+      security:
+        - userId: []
+          userRoles: []
+        - service: [tickets]
+      responses:
+        '200':
+          description: The Venue.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Venues]
+      operationId: updateVenue
+      summary: Change a Venue's details
+      description: |
+        Each property given replaces the Venue's current value; properties
+        left out are unchanged. A list (`images`, `equipment`, `rooms`) is
+        replaced whole. A new `pricePerDay` applies only to Bookings created
+        from now on.
+
+        **Access:** a user with the `venue-manager` role who is the Venue's
+        Venue Manager.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenueChanges'
+      responses:
+        '204':
+          description: The Venue was changed.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Venues]
+      operationId: deleteVenue
+      summary: Remove a Venue
+      description: |
+        Removes the Venue with its Rooms, its Rating and its Bookings, which
+        must all have ended.
+
+        **Access:** a user with the `venue-manager` role who is the Venue's
+        Venue Manager.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      responses:
+        '204':
+          description: The Venue was removed.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >-
+            `/problems/venue-has-bookings`: the Venue has a Booking that has
+            not ended.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/venue-has-bookings
+                title: The Venue has Bookings that have not ended
+                status: 409
+  /venues/{venueId}/unlist:
+    parameters:
+      - $ref: '#/components/parameters/VenueId'
+    post:
+      tags: [Venues]
+      operationId: unlistVenue
+      summary: Unlist a Venue
+      description: |
+        Takes a Listed Venue out of search. It accepts no new Bookings, and
+        its existing Bookings stand.
+
+        **Access:** a user with the `venue-manager` role who is the Venue's
+        Venue Manager.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      responses:
+        '204':
+          description: The Venue is Unlisted.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/VenueUnlisted'
+  /venues/{venueId}/relist:
+    parameters:
+      - $ref: '#/components/parameters/VenueId'
+    post:
+      tags: [Venues]
+      operationId: relistVenue
+      summary: Relist a Venue
+      description: |
+        Puts an Unlisted Venue back in search, accepting Booking requests
+        again.
+
+        **Access:** a user with the `venue-manager` role who is the Venue's
+        Venue Manager.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      responses:
+        '204':
+          description: The Venue is Listed.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: '`/problems/venue-listed`: the Venue is already Listed.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/venue-listed
+                title: The Venue is Listed
+                status: 409
+  /venues/{venueId}/availability:
+    parameters:
+      - $ref: '#/components/parameters/VenueId'
+    get:
+      tags: [Venues]
+      operationId: checkAvailability
+      summary: Check a Venue's days
+      description: |
+        Answers whether any Booking of the Venue overlaps the days from
+        `firstDay` to `lastDay`, both included, and which of those days are
+        taken.
+
+        **Access:** any user.
+      security:
+        - userId: []
+          userRoles: []
+      parameters:
+        - name: firstDay
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: lastDay
+          in: query
+          required: true
+          description: Not before `firstDay`.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: The Venue's availability on those days.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /venues/{venueId}/bookings:
+    parameters:
+      - $ref: '#/components/parameters/VenueId'
+    get:
+      tags: [Bookings]
+      operationId: listVenueBookings
+      summary: List a Venue's Bookings
+      description: |
+        Returns every Booking of the Venue, including those that have ended.
+
+        **Access:** a user with the `venue-manager` role who is the Venue's
+        Venue Manager.
+      security:
+        - userId: []
+          userRoles: [venue-manager]
+      responses:
+        '200':
+          description: The Venue's Bookings.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /bookings:
+    post:
+      tags: [Bookings]
+      operationId: requestBooking
+      summary: Request a Booking
+      description: |
+        Books a Listed Venue for an Event, its Promoter and the days from
+        `firstDay` to `lastDay`, both included. The amount is the number of
+        days times the Venue's price per day, and never changes afterwards.
+        Places doesn't compare the Venue's capacity with the Event. Once
+        the Booking is saved, Places publishes *Booking confirmed*.
+
+        **Access:** Events.
+      security:
+        - service: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: The Booking was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: >-
+            The request is malformed, `lastDay` is before `firstDay`, or
+            `firstDay` is before today.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: |
+            The Booking can't be made:
+
+            - `/problems/days-taken`: a Booking of the Venue overlaps the days;
+            - `/problems/event-already-booked`: the Event already has a
+              Booking, whose id is in `bookingId`;
+            - `/problems/venue-unlisted`: the Venue is Unlisted.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/days-taken
+                title: The days are taken
+                status: 409
+                detail: A Booking of the Venue covers 2027-06-10.
+        '422':
+          description: '`/problems/unknown-venue`: no Venue has the id `venueId`.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/unknown-venue
+                title: No such Venue
+                status: 422
+  /bookings/{bookingId}:
+    parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Bookings]
+      operationId: cancelBooking
+      summary: Cancel a Booking
+      description: |
+        Cancels the Booking and answers only once its days are free, so a
+        Booking request sent straight after can take them. Places publishes
+        *Booking cancelled*, saying who cancelled it (Events or the Venue
+        Manager) and the reason, if one was given. A Booking that has
+        already been cancelled no longer exists, so a repeated call gets 404.
+
+        Events calls this to cancel its Event's Booking (`cancelBooking`);
+        a Venue Manager calls it to cancel a Booking at their Venue
+        (`cancelVenueBooking`).
+
+        **Access:** Events, or a user with the `venue-manager` role who is
+        the Venue Manager of the Booking's Venue.
+      security:
+        - service: [events]
+        - userId: []
+          userRoles: [venue-manager]
+      parameters:
+        - name: reason
+          in: query
+          description: Why the Booking is cancelled, passed on in *Booking cancelled*.
+          schema:
+            type: string
+            maxLength: 500
+      responses:
+        '204':
+          description: The Booking was cancelled.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: '`/problems/booking-ended`: the Booking has ended.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/booking-ended
+                title: The Booking has ended
+                status: 409
+components:
+  securitySchemes:
+    userId:
+      type: apiKey
+      in: header
+      name: X-User-Id
+      description: The user's id, a UUID, set by the Gateway.
+    userRoles:
+      type: apiKey
+      in: header
+      name: X-User-Roles
+      description: >-
+        The user's roles, comma-separated, set by the Gateway: `promoter`,
+        `venue-manager`, or both.
+    service:
+      type: apiKey
+      in: header
+      name: X-Service-Name
+      description: The calling service, `events` or `tickets`, set by that service.
+  parameters:
+    VenueId:
+      name: venueId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: A parameter or the request body is malformed or out of range.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthenticated:
+      description: The request names neither a user nor a service.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: >-
+        The caller may not call this operation, or isn't the Venue's Venue
+        Manager.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: No Venue or Booking has the id in the path.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    VenueUnlisted:
+      description: '`/problems/venue-unlisted`: the Venue is Unlisted.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: /problems/venue-unlisted
+            title: The Venue is Unlisted
+            status: 409
+  schemas:
+    Amount:
+      type: string
+      description: An amount in EUR, with two decimals.
+      pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'
+      examples: ['800.00']
+    VenueType:
+      type: string
+      enum: [open-air, stadium, pavilion, auditorium, conference-centre, other]
+    VenueDetails:
+      type: object
+      description: The details of a Venue that its Venue Manager sets.
+      properties:
+        name:
+          type: string
+          examples: [Coliseu do Porto]
+        address:
+          type: object
+          required: [street, postalCode, city]
+          properties:
+            street:
+              type: string
+              examples: [Rua de Passos Manuel 137]
+            postalCode:
+              type: string
+              examples: [4000-385]
+            city:
+              type: string
+              examples: [Porto]
+        coordinates:
+          type: object
+          required: [latitude, longitude]
+          properties:
+            latitude:
+              type: number
+              minimum: -90
+              maximum: 90
+            longitude:
+              type: number
+              minimum: -180
+              maximum: 180
+        capacity:
+          type: integer
+          minimum: 1
+          description: How many persons the Venue holds.
+        area:
+          type: number
+          exclusiveMinimum: 0
+          description: Area in square metres.
+        pricePerDay:
+          $ref: '#/components/schemas/Amount'
+        type:
+          $ref: '#/components/schemas/VenueType'
+        images:
+          type: array
+          description: Addresses of the Venue's images.
+          items:
+            type: string
+            format: uri
+        equipment:
+          type: array
+          items:
+            type: object
+            required: [item, quantity]
+            properties:
+              item:
+                type: string
+                examples: [projector]
+              quantity:
+                type: integer
+                minimum: 1
+        rooms:
+          type: array
+          description: The Rooms in the Venue's description. A Room is never booked on its own.
+          items:
+            $ref: '#/components/schemas/Room'
+    VenueSubmission:
+      description: A new Venue. Every detail is required; the lists may be empty.
+      allOf:
+        - $ref: '#/components/schemas/VenueDetails'
+      required: [name, address, coordinates, capacity, area, pricePerDay, type, images, equipment, rooms]
+    VenueChanges:
+      description: New values for any of a Venue's details.
+      allOf:
+        - $ref: '#/components/schemas/VenueDetails'
+      minProperties: 1
+    Venue:
+      description: A Venue, Listed or Unlisted.
+      allOf:
+        - $ref: '#/components/schemas/VenueSubmission'
+        - type: object
+          required: [id, venueManagerId, listed, roomCount]
+          properties:
+            id:
+              type: string
+              format: uuid
+            venueManagerId:
+              type: string
+              format: uuid
+            listed:
+              type: boolean
+              description: True when the Venue is Listed, false when it is Unlisted.
+            roomCount:
+              type: integer
+              description: The number of Rooms.
+            rating:
+              type: number
+              description: >-
+                The Venue's Rating, as last reported by Reviews (G1). Absent
+                until the first one arrives.
+    Room:
+      type: object
+      required: [name, capacity, area, layoutImage]
+      properties:
+        name:
+          type: string
+        capacity:
+          type: integer
+          minimum: 1
+        area:
+          type: number
+          exclusiveMinimum: 0
+          description: Area in square metres.
+        layoutImage:
+          type: string
+          format: uri
+    Availability:
+      type: object
+      required: [available, takenDays]
+      properties:
+        available:
+          type: boolean
+          description: True when no Booking of the Venue overlaps the days.
+        takenDays:
+          type: array
+          description: The days a Booking covers; empty when `available` is true.
+          items:
+            type: string
+            format: date
+    BookingRequest:
+      type: object
+      required: [eventId, promoterId, venueId, firstDay, lastDay]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        promoterId:
+          type: string
+          format: uuid
+          description: The Event's Promoter.
+        venueId:
+          type: string
+          format: uuid
+        firstDay:
+          type: string
+          format: date
+        lastDay:
+          type: string
+          format: date
+          description: Not before `firstDay`.
+    Booking:
+      allOf:
+        - $ref: '#/components/schemas/BookingRequest'
+        - type: object
+          required: [id, amount]
+          properties:
+            id:
+              type: string
+              format: uuid
+            amount:
+              $ref: '#/components/schemas/Amount'
+    Problem:
+      type: object
+      description: An RFC 9457 problem details document.
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        bookingId:
+          type: string
+          format: uuid
+          description: With `/problems/event-already-booked`, the Event's Booking.
