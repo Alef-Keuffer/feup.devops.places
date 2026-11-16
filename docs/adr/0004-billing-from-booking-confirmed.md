@@ -11,4 +11,4 @@ When a Booking is confirmed, Places publishes a *Booking confirmed* message on t
 ## Consequences
 
 - Billing also consumes *Booking cancelled*: it cancels the Booking's bill if the Promoter hasn't paid it yet, and refunds no paid bill, whoever cancelled the Booking. G3 told us this on 2026-11-16 and calls it deliberate for delivery 1 (`docs/groups/2026-11-16-g3-to-g5.md`), replacing our earlier assumption that Billing ignores cancellations. A Promoter whose Booking the Venue Manager cancels after they paid loses the amount.
-- The Booking request from Events must carry the Promoter id.
+- The Booking request from Events must carry the Promoter's user id, the value the Gateway forwards as `X-User-Id`: Billing compares it with `X-User-Id` to check that the person paying a bill is its Promoter (`docs/groups/2026-11-16-g3-to-g5.md`). G2 has still to agree to send that id rather than the id of its own Promoter entity.

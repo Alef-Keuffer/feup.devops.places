@@ -6,9 +6,9 @@ Besides its REST API, Places talks to the other groups through messages on the b
 
 ### Messages
 
-All four are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, called the *Places topic* here. It reads *Event cancelled* from the *Log topic*, on which Promoters and Events (G2) publishes its Event messages, and *Rating changed* from a channel of Reviews (G1), called the *Reviews topic* here. G4 will name the channels and choose the broker.
+All four are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, the *Places topic*: a durable topic exchange named `places`, on which each message's routing key is its type, `BookingConfirmed` or `BookingCancelled`, so that a consumer binds only to the types it handles. It reads *Event cancelled* from the *Log topic*, on which Promoters and Events (G2) publishes its Event messages, and *Rating changed* from a channel of Reviews (G1), called the *Reviews topic* here. G3 tells us that G4 runs RabbitMQ, which question L7 asks G4 to confirm.
 
-Messages are JSON, a text format every group's stack can read and write [@richardson2018, sec. 3.1.4], and follow the conventions of NFR-9 that the REST API section proposes (Table \ref{tab:conventions}): UUIDs for ids, ISO 8601 for dates and times, whole days in the Europe/Lisbon time zone, and amounts in EUR as decimal strings with two decimals. Each has a `type` field naming the message, so that a consumer can tell the messages on a channel apart without relying on a feature of a broker no one has chosen yet. Every message Places sends carries the Booking id (NFR-6).
+Messages are JSON, a text format every group's stack can read and write [@richardson2018, sec. 3.1.4], and follow the conventions of NFR-9 that the REST API section proposes (Table \ref{tab:conventions}): UUIDs for ids, ISO 8601 for dates and times, whole days in the Europe/Lisbon time zone, and amounts in EUR as decimal strings with two decimals. Each has a `type` field naming the message, so that a consumer can tell the messages on a channel apart without relying on the routing key. Every message Places sends carries the Booking id (NFR-6).
 
 Places reads only the fields it needs from a message, and ignores any others, along with messages of types it doesn't handle, such as *Event scheduled* on the Log topic (FR-27). This is the Robustness principle Richardson recommends for evolving an API [@richardson2018, sec. 3.1.3]. We ask the consumers of Places' messages to read them the same way, so that Places can add a field without breaking them.
 
@@ -31,7 +31,7 @@ Sent when
 | `type` | string | `BookingConfirmed`. |
 | `bookingId` | UUID | The Booking. Consumers drop a second message with the same Booking id. |
 | `eventId` | UUID | The Event the Venue is booked for. |
-| `promoterId` | UUID | The Event's Promoter, whom Billing bills and who may rate the Venue. |
+| `promoterId` | UUID | The Event's Promoter, whom Billing bills and who may rate the Venue, by user id: the value the Gateway forwards as `X-User-Id` (Table \ref{tab:identity}). |
 | `venueId` | UUID | The Venue booked. |
 | `venueManagerId` | UUID | The Venue's Venue Manager. |
 | `firstDay` | date | The first day of the Booking. |
@@ -59,7 +59,7 @@ Sent when
 | `type` | string | `BookingCancelled`. |
 | `bookingId` | UUID | The Booking cancelled. |
 | `eventId` | UUID | The Event that held it. |
-| `promoterId` | UUID | The Event's Promoter. |
+| `promoterId` | UUID | The Event's Promoter, by user id. |
 | `venueId` | UUID | The Venue that was booked. |
 | `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation or through *Event cancelled*; `venue-manager` when the Venue's Venue Manager did. The values are those of the `X-Service-Name` and `X-User-Roles` headers (Table \ref{tab:identity}). |
 | `reason` | string | The reason given, left out when none was. |
@@ -141,7 +141,7 @@ Only the Promoter who booked a Venue may rate it. Reviews enforces the rule, sin
 2. *Booking cancelled* says that the Booking no longer stands, whoever cancelled it. Reviews marks its record of the Booking as cancelled, creating the record if *Booking confirmed* hasn't arrived yet.
 3. When a Promoter submits a review of a Venue, Reviews accepts it only if it holds a record of a Booking by that Promoter at that Venue that is not cancelled. Reviews then recomputes the Venue's Rating and publishes *Rating changed*, which brings the new Rating back to Places.
 
-Reviews could instead ask Places, for each review, whether the Promoter had booked the Venue. Keeping its own record is the same trade Places makes for the Rating: Reviews takes reviews while Places is down. The rule assumes that the Promoter id Events puts in its Booking request is the id Reviews knows the Promoter by when the review arrives. We have asked Reviews to confirm that it enforces the rule this way.
+Reviews could instead ask Places, for each review, whether the Promoter had booked the Venue. Keeping its own record is the same trade Places makes for the Rating: Reviews takes reviews while Places is down. The rule needs the Promoter id Events puts in its Booking request to be the Promoter's user id, which the Gateway forwards to Reviews with the review; question L8 asks Events to send that id rather than its own Promoter id. We have asked Reviews to confirm that it enforces the rule this way.
 
 ### Reliable delivery
 

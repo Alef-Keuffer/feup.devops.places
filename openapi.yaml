@@ -768,7 +768,9 @@ components:
         promoterId:
           type: string
           format: uuid
-          description: The Event's Promoter.
+          description: >-
+            The Event's Promoter, by user id: the value the Gateway forwards
+            as `X-User-Id` when that Promoter calls.
         venueId:
           type: string
           format: uuid
