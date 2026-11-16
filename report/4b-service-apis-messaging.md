@@ -6,7 +6,7 @@ Besides its REST API, Places talks to the other groups through messages on the b
 
 ### Messages
 
-All four are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, the *Places topic*: a durable topic exchange named `places`, on which each message's routing key is its type, `BookingConfirmed` or `BookingCancelled`, so that a consumer binds only to the types it handles. It reads *Event cancelled* from the *Log topic*, on which Promoters and Events (G2) publishes its Event messages, and *Rating changed* from a channel of Reviews (G1), called the *Reviews topic* here. G3 tells us that G4 runs RabbitMQ, which question L7 asks G4 to confirm.
+All four are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, the *Places topic*: a durable topic exchange named `places`, on which each message's routing key is its type, `BookingConfirmed` or `BookingCancelled`, so that a consumer binds only to the types it handles. It reads *Event cancelled* from the *Log topic*, on which Promoters and Events (G2) publishes its Event messages, and *Rating changed* from a channel of Reviews (G1), called the *Reviews topic* here, which we have asked G1 to name (L6). G3 tells us that G4 runs RabbitMQ, which question L7 asks G4 to confirm.
 
 Messages are JSON, a text format every group's stack can read and write [@richardson2018, sec. 3.1.4], and follow the conventions of NFR-9 that the REST API section proposes (Table \ref{tab:conventions}): UUIDs for ids, ISO 8601 for dates and times, whole days in the Europe/Lisbon time zone, and amounts in EUR as decimal strings with two decimals. Each has a `type` field naming the message, so that a consumer can tell the messages on a channel apart without relying on the routing key. Every message Places sends carries the Booking id (NFR-6).
 
@@ -80,7 +80,7 @@ Consumers
 Sent when
 :   An Event is cancelled. G2 also publishes *Event scheduled* and other messages on the Log topic, which Places ignores (FR-27).
 
-G2 designs this message, so the table lists only the fields Places relies on. We have asked G2 and G4 which messages go on the Log topic.
+G2 designs this message, so the table lists only the fields Places relies on. Question L4 asks G2 and G4 which messages go on the Log topic.
 
 | Field | Type | Meaning |
 |------------------|-----------|---------------------------------------------------------------|
@@ -145,7 +145,7 @@ Reviews could instead ask Places, for each review, whether the Promoter had book
 
 ### Reliable delivery
 
-We assume the broker delivers each message at least once: it keeps a message until the consumer acknowledges it, and delivers it again if no acknowledgement comes, for instance because the consumer stopped while handling it. No message is lost, but one can arrive twice, and a redelivered message can arrive after messages sent later. G4 hasn't chosen the broker yet, and we have asked whether it delivers at least once; nothing below depends on more than that. Reliability then has two sides: Places must get each of its messages to the broker (NFR-4), and every consumer, Places included, must cope with receiving a message twice (NFR-5, NFR-6).
+We assume the broker delivers each message at least once: it keeps a message until the consumer acknowledges it, and delivers it again if no acknowledgement comes, for instance because the consumer stopped while handling it. No message is lost, but one can arrive twice, and a redelivered message can arrive after messages sent later. G3 tells us that G4 runs RabbitMQ, and question L7 asks G4 to confirm it. We propose to every group how to get at-least-once delivery from it. A publisher sends persistent messages and waits for the broker to confirm each one, which RabbitMQ does for a durable queue only once the message is on disk. A consumer reads from a durable queue of its own and acknowledges a message only after handling it, so that RabbitMQ requeues any message whose consumer stops before acknowledging it [@rabbitmq-confirms]. RabbitMQ also confirms a message that matches no queue, and keeps it nowhere, so each consumer must bind its queue before the first message it needs is sent. Nothing below depends on more than at-least-once delivery. Reliability then has two sides: Places must get each of its messages to the broker (NFR-4), and every consumer, Places included, must cope with receiving a message twice (NFR-5, NFR-6).
 
 #### Publishing through a transactional outbox {.unnumbered .unlisted}
 

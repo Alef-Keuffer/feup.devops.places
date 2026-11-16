@@ -416,7 +416,7 @@ The following are out of scope. Where another group or a later delivery covers a
 | Checking the Event's expected attendance against the Venue's capacity | Capacity is a search filter; the Promoter sets the ticket cap, which can change after booking (FR-21). |
 | Hourly, seasonal or per-date pricing | Price per day only (FR-22). |
 | Distance search, keyword search and equipment filters | Not offered (FR-11). |
-| Blocking days outside Bookings, such as for maintenance or rentals made outside the platform | Not in delivery 1; we have asked the professor. |
+| Blocking days outside Bookings, such as for maintenance or rentals made outside the platform | Not in delivery 1; question L1 asks the professor. |
 | Creating bills | Billing (G3) creates the bill from *Booking confirmed* (FR-24). |
 | Cancelling bills, refunds and cancellation fees | Billing (G3) cancels an unpaid bill when *Booking cancelled* arrives. For delivery 1 it refunds no paid bill and charges no fee, whoever cancelled the Booking. |
 | Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which learns who booked which Venue from *Booking confirmed* and *Booking cancelled*. |

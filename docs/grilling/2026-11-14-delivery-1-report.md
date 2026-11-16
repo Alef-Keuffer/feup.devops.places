@@ -59,10 +59,12 @@ No group handles refunds. If a Venue Manager cancels a Booking, the Promoter's b
 ## Since the session
 
 - 2026-11-16, G3 (`docs/groups/2026-11-16-g3-to-g5.md`): Billing cancels an unpaid bill on *Booking cancelled* and refunds no paid one, deliberately for delivery 1. This replaces "Billing ignores cancellations" in decisions 8 and 12 and the gap above; see ADR-0004. G3 also answered L5: yes.
-- 2026-11-16, our replies to G3 (`docs/groups/2026-11-16-g5-to-g3.md`):
+- 2026-11-16, our replies to G3 (`docs/groups/2026-11-16-g5-to-g3.md`) and G1 (`docs/groups/2026-11-16-g5-to-g1.md`):
   - `promoterId` is the Promoter's user id, the value the Gateway forwards as `X-User-Id`, so Billing can check who pays a bill and Reviews who may rate a Venue. Events must put that id in its Booking request rather than the id of G2's own Promoter entity; new question L8 to G2.
   - The Places topic is a durable topic exchange named `places`, and each message's routing key is its type. G3 says G4 runs RabbitMQ; L7 still asks G4.
+  - We asked G1 which exchange carries *Rating changed* and suggested the routing key `RatingChanged` (L6).
   - We asked G3 whether paying the Venue Manager the Booking's amount is out of scope for delivery 1, since Billing doesn't read `venueManagerId`; new question L9.
+- 2026-11-16, questions drafted for G2 and G4 (`docs/groups/drafts/`) but not sent, because we don't yet know who represents them. They carry L3, L4, L7 and L8, and add L10 (G2: call directly with `X-Service-Name: events`, adopt our conventions), L11 (G4: `X-User-Id` a UUID, role names) and L12 (G4: the Gateway removes the identity headers users send, and is the only way in). L4 now also asks for the exchange and routing key of *Event cancelled*, suggesting `EventCancelled`, and L7 asks who creates the exchanges. We sent every group a rule for the broker (`docs/groups/2026-11-16-g5-to-all.md`): each publisher declares a durable topic exchange named after itself, with the message type as routing key, sends persistent messages and waits for the broker's confirms; each consumer declares its own durable queue, binds it by routing key and acknowledges a message only after handling it. RabbitMQ confirms and drops a message that matches no queue, so a consumer must bind its queue before the first message it needs is published; the rule as sent leaves this out, and a drafted follow-up adds it. The report now says "question Ln asks" rather than "we have asked" for questions not yet sent.
 
 ## Out of scope for delivery 1
 
