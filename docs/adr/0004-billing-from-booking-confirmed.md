@@ -6,7 +6,7 @@ When a Booking is confirmed, Places publishes a *Booking confirmed* message on t
 
 - **Places calls Billing's REST API to create the bill.** Rejected: a Booking request would then succeed only while Billing is up, and a call that fails after the Booking is saved leaves a Booking with no bill, the failure ADR-0006 exists to prevent. Each synchronous call to another service while handling a request lowers that operation's availability (Richardson, *Microservices Patterns* §3.4.1).
 - **Places publishes a *Bill issued* message.** Rejected: a bill is Billing's concept, so Places would be modelling another group's domain, and the message would serve only G3.
-- **Places publishes *Booking confirmed* (chosen).** It states a fact about Places' own domain, so one message serves every group that needs it, not only Billing. We expected Reviews (G1) to read it too, to learn which Promoter booked which Venue; on 2026-11-16 G1 declined, since it decides who may rate a Venue from G2's messages instead (`docs/groups/2026-11-16-g1-to-g5.md`). Billing is its only consumer so far.
+- **Places publishes *Booking confirmed* (chosen).** It states a fact about Places' own domain, so one message serves every group that needs it, not only Billing. We expected Reviews (G1) to read it too, to learn which Promoter booked which Venue; on 2026-11-16 G1 declined. Reviews lets a user rate a Venue only after attending an Event there, and learns that from G2's messages and from Tickets (G3) instead (`docs/groups/2026-11-16-g1-to-g5.md`, `docs/groups/2026-11-16-g1-to-g5-ratings.md`). Billing is its only consumer so far.
 
 ## Consequences
 
