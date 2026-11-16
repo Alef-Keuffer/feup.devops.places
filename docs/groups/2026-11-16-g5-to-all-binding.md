@@ -1,6 +1,6 @@
 # Group 5 (Places) → all groups: binding queues
 
-> Draft, not sent. Adds to the broker rule in `../2026-11-16-g5-to-all.md` the two points it left out: bind before the first message is published, and declare the publisher's exchange before binding. When sent, move it to `docs/groups/<date>-g5-to-all-binding.md`. Paste from the next line on.
+> Sent to every group over WhatsApp. Adds to the broker rule in `2026-11-16-g5-to-all.md` the two points it left out: bind before the first message is published, and declare the publisher's exchange before binding.
 
 Two additions to our broker rule:
 

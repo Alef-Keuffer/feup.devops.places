@@ -36,6 +36,10 @@ _Avoid_: Hidden, archived, deleted
 A Venue reserved for one Event over consecutive whole days; an Event holds at most one Booking, and a Venue is available exactly when no Booking overlaps the requested days.
 _Avoid_: Reservation, schedule entry
 
+**Rebooking**:
+A Booking request that replaces its Event's Booking with a new one: either the old Booking is cancelled and the new one is created, or nothing changes.
+_Avoid_: Move, reschedule, postpone (postponing is what happens to the Event)
+
 **Rating**:
 A Venue's average score from Promoters' reviews, as last reported by the Reviews subsystem.
 _Avoid_: Reputation, score
