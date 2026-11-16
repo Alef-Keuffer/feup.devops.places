@@ -83,6 +83,7 @@ No group handles refunds. If a Venue Manager cancels a Booking, the Promoter's b
   - Billing keys its bills on `bookingId` and reads no separate message id, which replaces the message id of G3's slides of 11 November: one bill per Booking, and cancelling a cancelled bill changes nothing. A *Booking cancelled* for a Booking with no bill records the Booking as cancelled, and a later *Booking confirmed* for it creates no bill. What the report asks of Billing under "Consumers deduplicate by Booking id" is now what Billing does. G3 calls a bill a *charge*; the report keeps *bill*.
   - L9 answered: nobody pays the Venue Manager a Booking's amount in delivery 1, just as nobody pays Promoters their ticket revenue. Billing collects the money, and payouts to either aren't designed yet. Billing stores `venueManagerId` on each bill, ready for when payouts are added, and G3's report lists both payouts as open gaps. Ours lists the Venue Manager's.
 - 2026-11-16, reviewing the G4 draft again, settled in `2026-11-16-g4-identity.md`: Places takes only the user id from the Gateway (ADR-0008), and any signed-in user may submit a Venue, becoming its Venue Manager. This replaces the role check in decision 4 and the empty `X-User-Roles` of the entry on reviewing the G4 draft. FR-36 and FR-38 go, and that record lists the report's edits.
+- 2026-11-16, PR #21 edited `report/` and `openapi.yaml` directly, before and after the rule that replies only list report edits (`docs/agents/group-replies.md`): `721d540` (the broker rule, with a new source, `rabbitmq-confirms`) and `5d0fdfe` (the Rating refresh replacing *Rating changed*), plus `9990f73` (`X-User-Roles` may be empty). The edits stand, but nobody ran the citation check on them. Decided: the final ticket's consistency check reads them against the records, as it reads the whole report, and a citation check of their cited claims joins that ticket, so it runs after the G1 and G2 tickets rewrite the same Messaging passages. `9990f73` is left out, since the G4 ticket removes `X-User-Roles`.
 
 ## For the report
 
@@ -102,6 +103,10 @@ From G3's reply of 2026-11-16. `openapi.yaml` needs no edit, since it doesn't de
 - Messaging section, *Booking confirmed*'s fields: `venueManagerId` says Billing stores it on each bill, for paying the Venue Manager in a later delivery.
 - Messaging section, "Consumers deduplicate by Booking id": the paragraph says G3 has adopted keying on the Booking id for Billing, and the Billing bullet says what Billing does, as G3 confirmed, rather than what it must do, including recording a Booking as cancelled when *Booking cancelled* comes first.
 - Open points, L7: G3 already binds Billing's queue to `places` by routing key, as the rule says. L8: G3 has asked G2 the same.
+
+From PR #21's direct edits. This is no edit but a check, and it belongs to the final ticket, the one that runs the consistency check before #8.
+
+- Run the citation check on every claim that `721d540` and `5d0fdfe` added or reworded next to a citation, as those claims stand after the other tickets: at least `[@rabbitmq-confirms]` and the at-least-once paragraph under Reliable delivery, `[@richardson2018, sec. 3.4.1]`, `sec. 3.4.2` and `sec. 3.4` in the Rating options and the flows, and `[@postgresql-isolation, sec. 13.2.1]` for overlapping refreshes. List them with `git diff 36c11e2^1 36c11e2 -- report`.
 
 ## Out of scope for delivery 1
 
