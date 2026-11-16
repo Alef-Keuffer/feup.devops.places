@@ -1,6 +1,6 @@
 # Group 5 (Places) → Group 3 (Tickets and Billing): Rebooking
 
-> Draft, not sent. Tells G3 about the Rebooking we offer G2 (ADR-0007, `docs/grilling/2026-11-16-g2-report.md`), and asks whether Billing carries a paid bill over. Send it in G3's chat. G1 was to get it too, but reads none of our messages (`docs/groups/2026-11-16-g1-to-g5.md`). When sent, move it to `docs/groups/<date>-g5-to-g3-rebooking.md`. Paste from the next line on.
+> Sent to G3 in their chat. Tells G3 about the Rebooking we offer G2 (ADR-0007, `../grilling/2026-11-16-g2-report.md`), and asks whether Billing carries a paid bill over. G1 was to get it too, but reads none of our messages (`2026-11-16-g1-to-g5.md`).
 
 One change to our Booking messages, after reading G2's report. When Events (G2) postpones an Event, or moves it to another Venue, it can now replace the Event's Booking in one request, which we call a Rebooking: we either cancel the old Booking and create the new one, or do neither. You'll see it as two messages you already handle:
 
