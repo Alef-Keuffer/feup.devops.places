@@ -82,6 +82,7 @@ No group handles refunds. If a Venue Manager cancels a Booking, the Promoter's b
   - Billing binds its queue to `places` with the routing keys `BookingConfirmed` and `BookingCancelled`, as the broker rule says.
   - Billing keys its bills on `bookingId` and reads no separate message id, which replaces the message id of G3's slides of 11 November: one bill per Booking, and cancelling a cancelled bill changes nothing. A *Booking cancelled* for a Booking with no bill records the Booking as cancelled, and a later *Booking confirmed* for it creates no bill. What the report asks of Billing under "Consumers deduplicate by Booking id" is now what Billing does. G3 calls a bill a *charge*; the report keeps *bill*.
   - L9 answered: nobody pays the Venue Manager a Booking's amount in delivery 1, just as nobody pays Promoters their ticket revenue. Billing collects the money, and payouts to either aren't designed yet. Billing stores `venueManagerId` on each bill, ready for when payouts are added, and G3's report lists both payouts as open gaps. Ours lists the Venue Manager's.
+- 2026-11-16, reviewing the G4 draft again, settled in `2026-11-16-g4-identity.md`: Places takes only the user id from the Gateway (ADR-0008), and any signed-in user may submit a Venue, becoming its Venue Manager. This replaces the role check in decision 4 and the empty `X-User-Roles` of the entry on reviewing the G4 draft. FR-36 and FR-38 go, and that record lists the report's edits.
 
 ## For the report
 

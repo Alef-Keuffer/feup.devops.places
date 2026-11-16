@@ -4,18 +4,15 @@
 
 **Routing user requests**
 
-Forward users' requests for `/venues` and every path under it to Places. `/bookings` is only for Events, which calls us directly (see the endpoints in our report, section 4.1.1), so the Gateway doesn't need to route it.
+Forward users' requests for `/venues` and every path under it to Places. G2's report puts two endpoints of its own there, `/venues/{placeId}/rating` and `/venues/{placeId}/review-eligibility`; we've asked G2 to move them under a prefix of its own, so every path under `/venues` stays ours. `/bookings` is only for Events, which calls us directly (see the endpoints in our report, section 4.1.1), so the Gateway doesn't need to route it.
 
-**Identity headers** (our report, section 4.1.2)
+**The user's id** (our report, section 4.1.2)
 
-You check the user's token; Places never sees it. On every request you forward, set:
+You check the user's token; Places never sees it. On every request you forward, set `X-User-Id` to the user's id. We answer `401` to a request without it.
 
-- `X-User-Id`: the user's id.
-- `X-User-Roles`: the user's roles, comma-separated: `promoter`, `venue-manager`, both, or none. We ignore any other role.
+That is all we need: Places uses no roles. A user who submits a Venue becomes its Venue Manager, and only they may change it, so we check the id alone. The id must never change and never be given to another user, because we store it as the Venue's Venue Manager, and Billing (G3) compares it with the `promoterId` in our messages.
 
-Set both for every user, with `X-User-Roles` empty for a user who has neither role: any user may search and read Venues, and we answer `401` to a request without both headers.
-
-Before setting them, remove `X-User-Id`, `X-User-Roles` and `X-Service-Name` from whatever the user sent. We trust these headers without checking them, so users must reach Places only through the Gateway.
+Before setting it, remove `X-User-Id` and `X-Service-Name` from whatever the user sent. Events and Tickets call us directly and name themselves in `X-Service-Name`. We trust both headers without checking them, so users must reach Places only through the Gateway.
 
 **The broker** (our report, section 4.2.3)
 
@@ -33,5 +30,5 @@ Nothing. Places calls none of your APIs, and you don't need any of our messages.
 ## 3. Questions
 
 1. **Broker:** can you confirm you run RabbitMQ? Does the broker rule we sent to everyone work for you, or would you rather create the exchanges and queues yourselves?
-2. **Headers:** is `X-User-Id` a UUID? Are the roles in `X-User-Roles` named `promoter` and `venue-manager`, and can you send it empty for a user with neither?
-3. **Only way in:** can users reach Places only through the Gateway, and will the Gateway remove the three headers from whatever a user sends, as above?
+2. **The user's id:** will you send it in `X-User-Id`, or in a signed token such as a JWT, which Places would check instead? Is it a UUID that never changes and is never reused?
+3. **Only way in:** can users reach Places only through the Gateway, and will the Gateway remove `X-User-Id` and `X-Service-Name` from whatever a user sends, as above?

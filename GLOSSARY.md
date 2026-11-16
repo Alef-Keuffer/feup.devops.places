@@ -21,7 +21,7 @@ A user who organises Events and books Venues for them.
 _Avoid_: Organiser, client
 
 **Venue Manager**:
-The person who submits a Venue to the platform and is the only one allowed to change it and its Rooms; the same person may also be a Promoter.
+The user who submitted a Venue, and the only one allowed to change it and its Rooms; a user is the Venue Manager of each Venue they submitted and of no other, and may also be a Promoter.
 _Avoid_: Owner, landlord, admin
 
 **Listed**:
