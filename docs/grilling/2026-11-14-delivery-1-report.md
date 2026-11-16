@@ -56,6 +56,10 @@ Vocabulary: see `GLOSSARY.md`. Decisions: see `docs/adr/0001` to `0006`.
 
 No group handles refunds. If a Venue Manager cancels a Booking, the Promoter's bill still stands.
 
+## Since the session
+
+- 2026-11-16, G3 (`docs/groups/2026-11-16-g3-to-g5.md`): Billing cancels an unpaid bill on *Booking cancelled* and refunds no paid one, deliberately for delivery 1. This replaces "Billing ignores cancellations" in decisions 8 and 12 and the gap above; see ADR-0004. G3 also answered L5: yes.
+
 ## Out of scope for delivery 1
 
 Venue approval, transferring a Venue to another Venue Manager, hourly or seasonal pricing, distance search, keyword and equipment filters, blocking days outside Bookings, refunds and cancellation fees.

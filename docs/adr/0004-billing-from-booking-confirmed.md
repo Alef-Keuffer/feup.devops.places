@@ -10,5 +10,5 @@ When a Booking is confirmed, Places publishes a *Booking confirmed* message on t
 
 ## Consequences
 
-- Cancellations are not billed or refunded. Places publishes *Booking cancelled* for other groups, and Billing ignores it, so a Promoter whose Booking the Venue Manager cancels still owes the amount. Refunds are a named gap.
+- Billing also consumes *Booking cancelled*: it cancels the Booking's bill if the Promoter hasn't paid it yet, and refunds no paid bill, whoever cancelled the Booking. G3 told us this on 2026-11-16 and calls it deliberate for delivery 1 (`docs/groups/2026-11-16-g3-to-g5.md`), replacing our earlier assumption that Billing ignores cancellations. A Promoter whose Booking the Venue Manager cancels after they paid loses the amount.
 - The Booking request from Events must carry the Promoter id.
