@@ -1,6 +1,7 @@
 # Builds the report: pandoc -d report/pandoc.yaml
 # Sections are concatenated in this order; a new section file goes here.
 input-files:
+  - ${.}/0-revision-history.md
   - ${.}/1-application-requirements.md
   - ${.}/2-system-operations.md
   - ${.}/3-services.md
@@ -10,6 +11,8 @@ input-files:
   - ${.}/9-references-and-appendix.md
 output-file: ${.}/places-delivery-1.pdf
 pdf-engine: xelatex
+filters:
+  - ${.}/version.lua
 citeproc: true
 bibliography: ${.}/references.bib
 include-in-header: ${.}/preamble.tex

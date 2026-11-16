@@ -20,7 +20,9 @@ This writes `report/places-delivery-1.pdf`. `report/pandoc.yaml` lists the secti
 
 CI (`.github/workflows/report.yml`) builds the same PDF on each push to main and each pull request. To get it without building, open the run in the repo's Actions tab and download it under Artifacts.
 
-To hand in a delivery, tag the commit and push the tag, e.g. `git tag delivery-1 && git push origin delivery-1`. CI builds the PDF and attaches it to a release of that tag, so this link works for anyone, without a GitHub account, and doesn't expire: `https://github.com/Alef-Keuffer/feup.devops.places/releases/download/delivery-1/places-delivery-1.pdf`. Artifact links need a GitHub login and expire after 90 days, so share this one instead.
+To hand in a delivery, tag the commit and push the tag, e.g. `git tag delivery-1 && git push origin delivery-1`. CI builds the PDF and attaches it to a release of that tag, so this link works for anyone, without a GitHub account, and doesn't expire: `https://github.com/Alef-Keuffer/feup.devops.places/releases/download/delivery-1/places-delivery-1.pdf`. Artifact links need a GitHub login and expire after 90 days, so share this one instead. The release notes list the pull requests merged since the previous tag.
+
+Each version of the report is a tag: `delivery-1-draft-0.2` and so on for drafts, `delivery-1` for the version handed in. Before tagging, add the version's row to `report/0-revision-history.md`, in the commit you tag. The title page prints `git describe` of the checkout: the tag on a tagged commit, otherwise the nearest tag, the number of commits since it and the commit (`-dirty` if there are uncommitted changes).
 
 ## Write the report
 

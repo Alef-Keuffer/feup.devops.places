@@ -39,10 +39,10 @@ A microservice owns its data and decides what of it to share; other services get
 | Rating | Places, as a copy of the average Reviews computes | The latest *Rating changed* for each Venue, so that search never calls Reviews. The Messaging and collaborations section gives the reasons. |
 | Users, roles and authentication | Users and the Gateway (G4) | Each Venue's Venue Manager by user id. Places trusts the user id and roles the Gateway forwards with each request. |
 | Events | Promoters and Events (G2) | The Event id and Promoter id on each Booking, taken from Events' Booking request. |
-| Bills | Billing (G3) | Nothing. Places publishes *Booking confirmed* with the amount, and Billing creates the bill. |
+| Bills | Billing (G3) | Nothing. Places publishes *Booking confirmed* with the amount, and Billing creates the bill; on *Booking cancelled*, Billing cancels the bill if it is unpaid. |
 | Tickets | Tickets (G3) | Nothing. Tickets reads a Venue's name and address from Places. |
 | Reviews, and who may rate a Venue | Reviews (G1) | Nothing. Places publishes *Booking confirmed* and *Booking cancelled*, from which Reviews learns which Promoter booked which Venue. |
-| Refunds and cancellation fees | No group | A gap. Billing ignores *Booking cancelled*, so if a Venue Manager cancels a Booking, the Promoter's bill still stands. |
+| Refunds and cancellation fees | Billing (G3) | Nothing. For delivery 1, Billing refunds no paid bill and charges no fee, whoever cancelled the Booking. |
 
 : The data Places works with and the group each belongs to. \label{tab:ownership}
 

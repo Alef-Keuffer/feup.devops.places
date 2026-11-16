@@ -29,7 +29,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 | Venue Manager | User | Submit Venues and keep them up to date, unlist and relist them, see their Bookings, and cancel a Booking when something unforeseen happens. |
 | Events (G2) | Service | Book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
 | Reviews (G1) | Service | Learn which Promoter booked which Venue, so that only that Promoter can rate it. Reports each Venue's Rating to Places. |
-| Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking. Tickets reads a Venue's name and address to print on tickets. |
+| Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking, and cancels the bill if the Booking is cancelled before it is paid. Tickets reads a Venue's name and address to print on tickets. |
 | Gateway (G4) | Service | Checks each user's token and forwards the user's id and roles to Places. G4 also runs the message broker. |
 
 Figure \ref{fig:context} shows these actors around Places in a context diagram [@wiegers2013, ch. 5]. It shows what flows between them, not how: the Service APIs and collaborations section says which flows are REST calls and which are messages through the broker.
@@ -61,7 +61,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
   \draw[flow] ([yshift=3mm]reviews.west) -- node[label, above] {\emph{Rating changed}} ([yshift=3mm]places.east);
   \draw[flow] ([yshift=-3mm]places.east) -- node[label, below] {\emph{Booking confirmed},\\\emph{Booking cancelled}} ([yshift=-3mm]reviews.west);
 
-  \draw[flow] (places) -- node[label, right] {\emph{Booking confirmed} (Billing),\\Venue name and address (Tickets)} (g3);
+  \draw[flow] (places) -- node[label, right] {\emph{Booking confirmed},\\\emph{Booking cancelled} (Billing),\\Venue name and address (Tickets)} (g3);
 \end{tikzpicture}
 \caption{Context diagram of Places. Names in italics are messages.}
 \label{fig:context}
@@ -242,7 +242,13 @@ Requirements: FR-28 to FR-32, FR-37.
 | **When** Places creates the Booking
 | **Then** Billing receives *Booking confirmed* with the Promoter, the Venue, the days and the amount
 
-Requirements: FR-22, FR-24.
+*Scenario: a Booking is cancelled.*
+
+| **Given** a Booking that Billing has billed
+| **When** Places cancels the Booking, whoever asked
+| **Then** Billing receives *Booking cancelled* with the Booking id, and cancels the bill if it is unpaid
+
+Requirements: FR-22, FR-24, FR-32.
 
 **US-11 Rate a Venue.** As Reviews (G1), I want to learn which Promoter booked which Venue, and to give Places each Venue's Rating, so that only the Promoter who booked a Venue can rate it and Promoters can search by Rating.
 
@@ -412,7 +418,7 @@ The following are out of scope. Where another group or a later delivery covers a
 | Distance search, keyword search and equipment filters | Not offered (FR-11). |
 | Blocking days outside Bookings, such as for maintenance or rentals made outside the platform | Not in delivery 1; we have asked the professor. |
 | Creating bills | Billing (G3) creates the bill from *Booking confirmed* (FR-24). |
-| Billing cancellations, refunds and cancellation fees | Billing ignores *Booking cancelled*, and no group handles refunds: if a Venue Manager cancels a Booking, the Promoter's bill still stands. |
+| Cancelling bills, refunds and cancellation fees | Billing (G3) cancels an unpaid bill when *Booking cancelled* arrives. For delivery 1 it refunds no paid bill and charges no fee, whoever cancelled the Booking. |
 | Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which learns who booked which Venue from *Booking confirmed* and *Booking cancelled*. |
 | Authenticating users | The Gateway (G4) checks the token and forwards the user id and roles (FR-35). |
 | Acting on *Event scheduled* or *Event ended* | Places ignores them (FR-27). |

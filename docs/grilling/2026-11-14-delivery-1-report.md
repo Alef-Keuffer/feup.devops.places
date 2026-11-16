@@ -56,6 +56,14 @@ Vocabulary: see `GLOSSARY.md`. Decisions: see `docs/adr/0001` to `0006`.
 
 No group handles refunds. If a Venue Manager cancels a Booking, the Promoter's bill still stands.
 
+## Since the session
+
+- 2026-11-16, G3 (`docs/groups/2026-11-16-g3-to-g5.md`): Billing cancels an unpaid bill on *Booking cancelled* and refunds no paid one, deliberately for delivery 1. This replaces "Billing ignores cancellations" in decisions 8 and 12 and the gap above; see ADR-0004. G3 also answered L5: yes.
+- 2026-11-16, our replies to G3 (`docs/groups/2026-11-16-g5-to-g3.md`):
+  - `promoterId` is the Promoter's user id, the value the Gateway forwards as `X-User-Id`, so Billing can check who pays a bill and Reviews who may rate a Venue. Events must put that id in its Booking request rather than the id of G2's own Promoter entity; new question L8 to G2.
+  - The Places topic is a durable topic exchange named `places`, and each message's routing key is its type. G3 says G4 runs RabbitMQ; L7 still asks G4.
+  - We asked G3 whether paying the Venue Manager the Booking's amount is out of scope for delivery 1, since Billing doesn't read `venueManagerId`; new question L9.
+
 ## Out of scope for delivery 1
 
 Venue approval, transferring a Venue to another Venue Manager, hourly or seasonal pricing, distance search, keyword and equipment filters, blocking days outside Bookings, refunds and cancellation fees.
