@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the tags and the history to them, for the version report/version.lua prints
       - uses: pandoc/actions/setup@v1
         with:
           version: '3.13'
@@ -39,6 +41,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: places-delivery-1.pdf
-      - run: gh release create "$GITHUB_REF_NAME" ./*.pdf --repo "$GITHUB_REPOSITORY"
+      - run: gh release create "$GITHUB_REF_NAME" ./*.pdf --repo "$GITHUB_REPOSITORY" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
