@@ -15,3 +15,7 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 ### Consistency check
 
 To check the report, before a delivery or when asked, follow `.agents/skills/consistency-check/SKILL.md`.
+
+### Citation check
+
+To check that a citation says what the report claims, after writing or changing one or when asked, follow `.agents/skills/citation-check/SKILL.md`.
