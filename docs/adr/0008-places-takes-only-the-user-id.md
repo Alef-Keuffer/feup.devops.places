@@ -1,6 +1,6 @@
 # Places takes only the user id from the Gateway
 
-The Gateway (G4) forwards each user's id in `X-User-Id`, and Places takes nothing else from it: no roles. The id is all Places needs, because a Venue's Venue Manager is the user who submitted it (FR-5), and every check Places makes on a user compares the caller's id with that. Any signed-in user may submit a Venue. Until 2026-11-16 the Gateway was also to forward `X-User-Roles`, holding `promoter`, `venue-manager`, both or none, and Places refused a Venue submission from a user without `venue-manager` (FR-36). We dropped it while reviewing our draft to G4 (`docs/groups/drafts/g5-to-g4.md`; `docs/grilling/2026-11-16-g4-identity.md`).
+The Gateway (G4) forwards each user's id in `X-User-Id`, and Places takes nothing else from it: no roles. The id is all Places needs, because a Venue's Venue Manager is the user who submitted it (FR-5), and every check Places makes on a user compares the caller's id with that. Any signed-in user may submit a Venue. Until 2026-11-16 the Gateway was also to forward `X-User-Roles`, holding `promoter`, `venue-manager`, both or none, and Places refused a Venue submission from a user without `venue-manager` (FR-36). We dropped it while reviewing our draft to G4 (sent since as `docs/groups/2026-11-16-g5-to-g4.md`; `docs/grilling/2026-11-16-g4-identity.md`).
 
 ## Considered options
 
