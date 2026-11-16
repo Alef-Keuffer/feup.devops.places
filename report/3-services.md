@@ -6,7 +6,7 @@ Richardson's second step identifies the services and assigns the system operatio
 
 Places is built and deployed as one service, with all fourteen operations of Table \ref{tab:operations} and one database (NFR-12). The obvious alternative splits it along its two subdomains [@richardson2018, sec. 2.2.3]:
 
-- a *Venue Catalogue* service, with the Venues, their Rooms, whether each is Listed, and its Rating: `submitVenue`, `updateVenue`, `unlistVenue`, `relistVenue`, `deleteVenue`, `getVenue` and `handleRatingChanged`;
+- a *Venue Catalogue* service, with the Venues, their Rooms, whether each is Listed, and its Rating: `submitVenue`, `updateVenue`, `unlistVenue`, `relistVenue`, `deleteVenue`, `getVenue` and `refreshRatings`;
 - a *Booking* service, with the Bookings, availability and the messages about Bookings: `requestBooking`, `cancelBooking`, `cancelVenueBooking`, `listVenueBookings`, `checkAvailability` and `handleEventCancelled`.
 
 `searchVenues` fits in neither, because it filters on a Venue's details and on its free days at once. We rejected the split because several operations need Venues and Bookings in one transaction or one query. Table \ref{tab:split} compares what they cost in each design.
@@ -30,18 +30,18 @@ Newman asks for a goal before splitting a system: microservices are a means to a
 
 ## What Places owns
 
-A microservice owns its data and decides what of it to share; other services get that data from the microservice, never from its database [@newman2021, ch. 1]. Table \ref{tab:ownership} lists the data Places works with, the group it belongs to, and what Places holds of it. Of other groups' data, Places keeps only ids, as the domain model shows, and the Rating, which Reviews shares through *Rating changed*.
+A microservice owns its data and decides what of it to share; other services get that data from the microservice, never from its database [@newman2021, ch. 1]. Table \ref{tab:ownership} lists the data Places works with, the group it belongs to, and what Places holds of it. Of other groups' data, Places keeps only ids, as the domain model shows, and the Rating, which Places reads from Reviews.
 
 | Data | Belongs to | What Places holds or does |
 |------------------------|---------------------|------------------------------------------------|
 | Venues, their Rooms and details, Listed or Unlisted | Places | The source of truth. Other groups read a Venue by its id. |
 | Bookings, and so availability | Places | The source of truth. Events asks for a Booking, and Places accepts or rejects it. |
-| Rating | Places, as a copy of the average Reviews computes | The latest *Rating changed* for each Venue, so that search never calls Reviews. The Messaging and collaborations section gives the reasons. |
+| Rating | Places, as a copy of the average Reviews computes | Each Venue's Rating as Places last read it from Reviews, every five minutes, so that search never calls Reviews. The Messaging and collaborations section gives the reasons. |
 | Users, roles and authentication | Users and the Gateway (G4) | Each Venue's Venue Manager by user id. Places trusts the user id and roles the Gateway forwards with each request. |
 | Events | Promoters and Events (G2) | The Event id and Promoter id on each Booking, taken from Events' Booking request. |
 | Bills | Billing (G3) | Nothing. Places publishes *Booking confirmed* with the amount, and Billing creates the bill; on *Booking cancelled*, Billing cancels the bill if it is unpaid. |
 | Tickets | Tickets (G3) | Nothing. Tickets reads a Venue's name and address from Places. |
-| Reviews, and who may rate a Venue | Reviews (G1) | Nothing. Places publishes *Booking confirmed* and *Booking cancelled*, from which Reviews learns which Promoter booked which Venue. |
+| Reviews, and who may rate a Venue | Reviews (G1) | Nothing. Reviews decides who may rate a Venue without Places' messages. |
 | Refunds and cancellation fees | Billing (G3) | Nothing. For delivery 1, Billing refunds no paid bill and charges no fee, whoever cancelled the Booking. |
 
 : The data Places works with and the group each belongs to. \label{tab:ownership}

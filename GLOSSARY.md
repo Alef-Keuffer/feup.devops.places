@@ -17,11 +17,11 @@ A space inside a Venue, shown as part of the Venue's description; a Room is neve
 _Avoid_: Hall, space
 
 **Promoter**:
-A user who organises Events, books Venues for them and rates the Venues they booked.
+A user who organises Events and books Venues for them.
 _Avoid_: Organiser, client
 
 **Venue Manager**:
-The person who submits a Venue to the platform and is the only one allowed to change it and its Rooms; the same person may also be a Promoter.
+The user who submitted a Venue, and the only one allowed to change it and its Rooms; a user is the Venue Manager of each Venue they submitted and of no other, and may also be a Promoter.
 _Avoid_: Owner, landlord, admin
 
 **Listed**:
@@ -36,6 +36,10 @@ _Avoid_: Hidden, archived, deleted
 A Venue reserved for one Event over consecutive whole days; an Event holds at most one Booking, and a Venue is available exactly when no Booking overlaps the requested days.
 _Avoid_: Reservation, schedule entry
 
+**Rebooking**:
+A Booking request that replaces its Event's Booking with a new one: either the old Booking is cancelled and the new one is created, or nothing changes.
+_Avoid_: Move, reschedule, postpone (postponing is what happens to the Event)
+
 **Rating**:
-A Venue's average score from Promoters' reviews, as last reported by the Reviews subsystem.
+A Venue's average review score, as Places last read it from the Reviews subsystem.
 _Avoid_: Reputation, score

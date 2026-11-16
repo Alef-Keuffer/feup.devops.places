@@ -547,7 +547,7 @@ components:
       name: X-User-Roles
       description: >-
         The user's roles, comma-separated, set by the Gateway: `promoter`,
-        `venue-manager`, or both.
+        `venue-manager`, both, or none.
     service:
       type: apiKey
       in: header
@@ -728,8 +728,8 @@ components:
             rating:
               type: number
               description: >-
-                The Venue's Rating, as last reported by Reviews (G1). Absent
-                until the first one arrives.
+                The Venue's Rating, as Places last read it from Reviews (G1).
+                Absent until Places first reads one.
     Room:
       type: object
       required: [name, capacity, area, layoutImage]

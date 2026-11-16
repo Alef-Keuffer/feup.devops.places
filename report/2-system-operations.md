@@ -1,6 +1,6 @@
 # System operations
 
-Richardson's first step turns the requirements into *system operations*: the requests Places handles, each either a *command*, which creates, changes or removes data, or a *query*, which only reads it [@richardson2018, sec. 2.2.1]. He first draws a high-level domain model to give the operations a vocabulary, then specifies each operation by its parameters, its result, the preconditions that must hold when it is called and the postconditions that hold once it has run. This section does the same for Places. It says what each operation does, not how the request arrives: the Service APIs and collaborations section maps each operation to a REST endpoint or a broker message. In this report, "system operations" means these commands and queries, not the work of deploying and running Places.
+Richardson's first step turns the requirements into *system operations*: the requests Places handles, each either a *command*, which creates, changes or removes data, or a *query*, which only reads it [@richardson2018, sec. 2.2.1]. He first draws a high-level domain model to give the operations a vocabulary, then specifies each operation by its parameters, its result, the preconditions that must hold when it is called and the postconditions that hold once it has run. This section does the same for Places. It says what each operation does, not how the request arrives: the Service APIs and collaborations section maps each operation to a REST endpoint, a broker message or, for `refreshRatings`, Places' own timer. In this report, "system operations" means these commands and queries, not the work of deploying and running Places.
 
 ## Domain model
 
@@ -38,7 +38,7 @@ Figure \ref{fig:domain} shows the domain model. Its classes are the nouns of the
 - **Venue** is what a Promoter books. It has the details of FR-1 and is either Listed or Unlisted (FR-4, FR-7).
 - **Room** is part of a Venue's description. It has no price and is never booked on its own (FR-3).
 - **Booking** reserves a Venue for one Event and its Promoter, from a first to a last day, both included (FR-16). Its amount is fixed when it is created (FR-22), and its days never change (FR-23). Cancelling a Booking removes it, so its days are free at once (FR-31); who cancelled it and why travel in *Booking cancelled* (FR-32). A Booking that has ended stays until its Venue is removed.
-- **Rating** is Places' copy of the average Reviews computes for a Venue, with the time Reviews stamped it with, so that an older *Rating changed* can't replace a newer one (FR-33, FR-34). A Venue has no Rating until the first *Rating changed* for it arrives.
+- **Rating** is Places' copy of the average Reviews computes for a Venue, with the time Reviews stamped it with, so that an older answer from Reviews can't replace a newer one (FR-33, FR-34). A Venue has no Rating until Places first reads one for it.
 - **Event**, **Promoter** and **Venue Manager** belong to other groups: Events and Promoters to Promoters and Events (G2), users to Users (G4). Places keeps only their ids, the way Richardson's aggregates refer to what they don't own [@richardson2018, ch. 5]. It takes the Event and Promoter ids from Events' Booking requests and the Venue Manager's from the identity the Gateway forwards, and never asks the other groups about them.
 
 Two invariants hold at all times, even when requests arrive at the same moment. The database enforces both; for the first, that is the exclusion constraint of NFR-11.
@@ -57,7 +57,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 | `unlistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-37, NFR-2 |
 | `relistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-37, NFR-2 |
 | `deleteVenue` | Command | Venue Manager | US-8 | FR-9, FR-37 |
-| `requestBooking` | Command | Events | US-3, US-10, US-11 | FR-8, FR-16 to FR-22, FR-24, NFR-2 to NFR-4 |
+| `requestBooking` | Command | Events | US-3, US-10 | FR-8, FR-16 to FR-22, FR-24, NFR-2 to NFR-4 |
 | `cancelBooking` | Command | Events | US-4 | FR-23, FR-25, FR-30 to FR-32, NFR-2, NFR-4 |
 | `cancelVenueBooking` | Command | Venue Manager | US-9 | FR-29 to FR-32, FR-37, NFR-2, NFR-4 |
 | `searchVenues` | Query | Any user | US-1 | FR-8, FR-11 to FR-14, NFR-1, NFR-7 |
@@ -65,7 +65,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 | `getVenue` | Query | Any user, Tickets | US-12 | FR-3, FR-10, FR-33, NFR-7 |
 | `listVenueBookings` | Query | Venue Manager | US-9 | FR-28, FR-37 |
 | `handleEventCancelled` | Command | Events, through the Log topic | US-4 | FR-26, FR-27, FR-30 to FR-32, NFR-4, NFR-5 |
-| `handleRatingChanged` | Command | Reviews, through the broker | US-11 | FR-33, FR-34, NFR-5 |
+| `refreshRatings` | Command | Places itself, every five minutes | US-11 | FR-33, FR-34, NFR-7 |
 
 : The system operations of Places. \label{tab:operations}
 
@@ -160,7 +160,7 @@ Preconditions
     - Every Booking at the Venue has ended (FR-9).
 
 Postconditions
-:   - The Venue is removed, together with its Rooms, its Rating and its Bookings, all of which have ended. Operations that name it now fail their first precondition, and a later *Rating changed* for it changes nothing.
+:   - The Venue is removed, together with its Rooms, its Rating and its Bookings, all of which have ended. Operations that name it now fail their first precondition, and `refreshRatings` no longer reads its Rating.
 
 No operation changes a Booking's days: Events moves a Booking by cancelling it with `cancelBooking` and calling `requestBooking` again (FR-23).
 
@@ -305,10 +305,10 @@ Postconditions
 :   - If the Event had a Booking that had not ended, that Booking is removed and its days are free (FR-26, FR-30, FR-31), and *Booking cancelled* is queued with Events as who cancelled it (FR-32, NFR-4).
     - Otherwise nothing has changed and nothing is queued (FR-26). This is the case when the message arrives a second time, so the second delivery has no effect (NFR-5).
 
-#### `handleRatingChanged` {.unnumbered .unlisted}
+#### `refreshRatings` {.unnumbered .unlisted}
 
 Parameters
-:   A *Rating changed* message from Reviews, with a Venue id, the Venue's new average and the time Reviews stamped it with (FR-33, FR-34).
+:   None. Places runs it every five minutes (FR-33).
 
 Result
 :   Nothing.
@@ -317,6 +317,6 @@ Preconditions
 :   - None.
 
 Postconditions
-:   - If the Venue exists and has no Rating, or a Rating stamped no later than the message, its Rating is now the message's average and stamp, and search and `getVenue` use it (FR-33).
-    - Otherwise nothing has changed: Places ignores a message stamped earlier than the Rating it holds (FR-34), and one for a Venue that no longer exists.
-    - A second delivery of the same message sets the same Rating again, so it has the effect of one (NFR-5).
+:   - Places has asked Reviews for the Rating of each Venue, with its average and the time Reviews stamped it with.
+    - A Venue whose answer is stamped no earlier than the Rating it holds, or that had no Rating, now has the answer's average and stamp as its Rating, and search and `getVenue` use it (FR-33).
+    - Every other Venue keeps the Rating it holds, if any: when the answer is stamped earlier (FR-34), when Reviews didn't answer for it (FR-33), and when Reviews has no Rating for it. A Venue removed meanwhile gets no Rating.

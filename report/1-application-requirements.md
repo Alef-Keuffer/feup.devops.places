@@ -17,7 +17,7 @@ The report uses these terms with these meanings only.
 | Listed | A Venue that appears in search and accepts new Bookings. A Venue is Listed as soon as it is submitted. |
 | Unlisted | A Venue its Venue Manager has taken out of search. It accepts no new Bookings, but its existing Bookings stand. |
 | Booking | A Venue reserved for one Event over consecutive whole days. An Event holds at most one Booking, and a Venue is available exactly when no Booking overlaps the requested days. |
-| Rating | The average of the reviews Promoters have given a Venue, as last reported by Reviews (G1). |
+| Rating | The average of a Venue's reviews, as Places last read it from Reviews (G1). |
 
 ## Actors
 
@@ -28,7 +28,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 | Promoter | User | Find Venues that suit an Event and check their days. Books and cancels through Events, and rates through Reviews. |
 | Venue Manager | User | Submit Venues and keep them up to date, unlist and relist them, see their Bookings, and cancel a Booking when something unforeseen happens. |
 | Events (G2) | Service | Book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
-| Reviews (G1) | Service | Learn which Promoter booked which Venue, so that only that Promoter can rate it. Reports each Venue's Rating to Places. |
+| Reviews (G1) | Service | Nothing. Reviews decides who may rate a Venue and computes each Venue's Rating, which Places reads from it. |
 | Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking, and cancels the bill if the Booking is cancelled before it is paid. Tickets reads a Venue's name and address to print on tickets. |
 | Gateway (G4) | Service | Checks each user's token and forwards the user's id and roles to Places. G4 also runs the message broker. |
 
@@ -58,8 +58,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
   \draw[flow] ([xshift=-4mm]events.south) -- node[label, left] {Booking requests,\\Booking cancellations,\\\emph{Event cancelled}} ([xshift=-4mm]places.north);
   \draw[flow] ([xshift=4mm]places.north) -- node[label, right] {\emph{Booking cancelled}} ([xshift=4mm]events.south);
 
-  \draw[flow] ([yshift=3mm]reviews.west) -- node[label, above] {\emph{Rating changed}} ([yshift=3mm]places.east);
-  \draw[flow] ([yshift=-3mm]places.east) -- node[label, below] {\emph{Booking confirmed},\\\emph{Booking cancelled}} ([yshift=-3mm]reviews.west);
+  \draw[flow] (reviews) -- node[label, above] {Venue Ratings} (places);
 
   \draw[flow] (places) -- node[label, right] {\emph{Booking confirmed},\\\emph{Booking cancelled} (Billing),\\Venue name and address (Tickets)} (g3);
 \end{tikzpicture}
@@ -250,27 +249,27 @@ Requirements: FR-28 to FR-32, FR-37.
 
 Requirements: FR-22, FR-24, FR-32.
 
-**US-11 Rate a Venue.** As Reviews (G1), I want to learn which Promoter booked which Venue, and to give Places each Venue's Rating, so that only the Promoter who booked a Venue can rate it and Promoters can search by Rating.
-
-*Scenario: Reviews learns who booked.*
-
-| **Given** a Booking request that Places accepts, or a Booking that is later cancelled
-| **When** Places creates or cancels the Booking
-| **Then** Reviews receives *Booking confirmed* or *Booking cancelled*, naming the Promoter and the Venue
+**US-11 See a Venue's Rating.** As a Promoter, I want each Venue to show the Rating Reviews (G1) has computed for it, so that I can compare Venues and search by Rating.
 
 *Scenario: a new Rating.*
 
 | **Given** a Venue whose Rating is 4.2, stamped 10:00
-| **When** *Rating changed* arrives with 4.4, stamped 10:05
+| **When** a refresh reads 4.4, stamped 10:05, from Reviews
 | **Then** Places shows 4.4 and searches use it
 
-*Scenario: a late message.*
+*Scenario: a late answer.*
 
 | **Given** the same Venue, now rated 4.4 as of 10:05
-| **When** an older *Rating changed* stamped 10:00 arrives late
+| **When** an overlapping refresh saves 4.2, stamped 10:00, after it
 | **Then** Places keeps 4.4
 
-Requirements: FR-24, FR-32 to FR-34.
+*Scenario: Reviews is down.*
+
+| **Given** the same Venue, rated 4.4
+| **When** a refresh gets no answer from Reviews
+| **Then** Places keeps 4.4, and searches use it
+
+Requirements: FR-33, FR-34, NFR-7.
 
 **US-12 Print a Venue on tickets.** As Tickets (G3), I want to read a Venue's name and address, so that tickets show where the Event is held.
 
@@ -342,8 +341,8 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 
 | ID | Requirement |
 |-------|------------------------------------------------------------------------------|
-| FR-33 | When *Rating changed* arrives from Reviews, Places shall keep it as the Venue's Rating and use it in search and when returning the Venue. |
-| FR-34 | Places shall ignore a *Rating changed* stamped earlier than the Rating it holds for that Venue. |
+| FR-33 | Every five minutes, Places shall read each Venue's Rating from Reviews, keep it, and use it in search and when returning the Venue. When Reviews doesn't answer, Places shall keep the Rating it holds. |
+| FR-34 | Places shall not replace a Venue's Rating with one stamped earlier than the Rating it holds. |
 
 #### Access {.unnumbered .unlisted}
 
@@ -376,7 +375,7 @@ Each non-functional requirement comes with the measure that decides whether Plac
 | ID | Requirement | How it is measured |
 |--------|------------------------------------------|----------------------------------------|
 | NFR-4 | Every Booking that Places creates or cancels shall reach the broker as *Booking confirmed* or *Booking cancelled* at least once, even if Places stops between saving the change and sending the message. | Places is stopped right after the database commit and restarted: the message reaches the broker. No message may be lost. |
-| NFR-5 | Handling *Event cancelled* or *Rating changed* twice shall have the same effect as handling it once, since the broker delivers each message at least once. | Each message is delivered twice in a test: the stored data and the messages sent are the same as after one delivery. |
+| NFR-5 | Handling *Event cancelled* twice shall have the same effect as handling it once, since the broker delivers each message at least once. | The message is delivered twice in a test: the stored data and the messages sent are the same as after one delivery. |
 | NFR-6 | Every message Places sends shall carry the Booking id, so that consumers can drop a message they receive twice. | Inspection of the message schemas. |
 | NFR-7 | Search, availability checks and getting a Venue shall keep working, and keep to NFR-1, while Reviews or Events is unavailable. | The NFR-1 load test is rerun with Reviews and Events stopped. |
 
@@ -416,10 +415,10 @@ The following are out of scope. Where another group or a later delivery covers a
 | Checking the Event's expected attendance against the Venue's capacity | Capacity is a search filter; the Promoter sets the ticket cap, which can change after booking (FR-21). |
 | Hourly, seasonal or per-date pricing | Price per day only (FR-22). |
 | Distance search, keyword search and equipment filters | Not offered (FR-11). |
-| Blocking days outside Bookings, such as for maintenance or rentals made outside the platform | Not in delivery 1; we have asked the professor. |
+| Blocking days outside Bookings, such as for maintenance or rentals made outside the platform | Not in delivery 1; question L1 asks the professor. |
 | Creating bills | Billing (G3) creates the bill from *Booking confirmed* (FR-24). |
 | Cancelling bills, refunds and cancellation fees | Billing (G3) cancels an unpaid bill when *Booking cancelled* arrives. For delivery 1 it refunds no paid bill and charges no fee, whoever cancelled the Booking. |
-| Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which learns who booked which Venue from *Booking confirmed* and *Booking cancelled*. |
+| Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which reads none of Places' messages. Places reads each Venue's Rating from it (FR-33). |
 | Authenticating users | The Gateway (G4) checks the token and forwards the user id and roles (FR-35). |
 | Acting on *Event scheduled* or *Event ended* | Places ignores them (FR-27). |
 | Deploying and operating Places (DevOps operations) | Later deliveries. In this report, "system operations" means the commands and queries Places handles. |
