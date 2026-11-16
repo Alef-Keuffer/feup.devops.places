@@ -9,7 +9,7 @@ Delivery 1's cutoff: the afternoon of 2026-11-17.
 1. Save the reply in `docs/groups/` as `<date>-g<N>-to-g5.md`, or as the file the group sent, with a note at its top saying how it arrived. A draft of ours that has been sent moves out of `docs/groups/drafts/`, as its README says.
 2. Record what the reply settles, and why: in a grilling record when we grill on it, otherwise as a dated entry under "Since the session" in the latest grilling record. Update ADRs and `GLOSSARY.md` as `docs/agents/domain.md` says.
 3. List each edit the reply calls for in `report/` or `openapi.yaml` under "For the report" in that grilling record, naming the requirement, operation, section or table it touches. Add the heading if the record has none. The tickets make these edits, so `report/` and `openapi.yaml` stay as they are.
-4. Commit on the current branch. Other sessions start from commits, not from this working tree. Done when `git status` lists none of the files this session touched.
+4. Commit on the `draft` branch and push it; replies gather there until the cutoff, then go to main in one PR. Other sessions start from commits, not from this working tree. Done when `git status` lists none of the files this session touched.
 
 ## Cutting tickets
 
