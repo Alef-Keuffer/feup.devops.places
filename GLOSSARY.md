@@ -17,7 +17,7 @@ A space inside a Venue, shown as part of the Venue's description; a Room is neve
 _Avoid_: Hall, space
 
 **Promoter**:
-A user who organises Events, books Venues for them and rates the Venues they booked.
+A user who organises Events and books Venues for them.
 _Avoid_: Organiser, client
 
 **Venue Manager**:
@@ -41,5 +41,5 @@ A Booking request that replaces its Event's Booking with a new one: either the o
 _Avoid_: Move, reschedule, postpone (postponing is what happens to the Event)
 
 **Rating**:
-A Venue's average score from Promoters' reviews, as last reported by the Reviews subsystem.
+A Venue's average review score, as Places last read it from the Reviews subsystem.
 _Avoid_: Reputation, score
