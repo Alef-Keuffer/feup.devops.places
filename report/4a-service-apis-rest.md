@@ -42,7 +42,7 @@ The Gateway checks each user's token and forwards the request with the user's id
 | Header | Set by | Value |
 |------------------|-------------------|------------------------------------------------------|
 | `X-User-Id` | The Gateway | The user's id. |
-| `X-User-Roles` | The Gateway | The user's roles, comma-separated: `promoter`, `venue-manager`, or both. |
+| `X-User-Roles` | The Gateway | The user's roles, comma-separated: `promoter`, `venue-manager`, both, or none. |
 | `X-Service-Name` | Events or Tickets | `events` or `tickets`. |
 
 : The headers that identify the caller. \label{tab:identity}
