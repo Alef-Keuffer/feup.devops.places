@@ -37,7 +37,7 @@ Figure \ref{fig:domain} shows the domain model. Its classes are the nouns of the
 
 - **Venue** is what a Promoter books. It has the details of FR-1 and is either Listed or Unlisted (FR-4, FR-7).
 - **Room** is part of a Venue's description. It has no price and is never booked on its own (FR-3).
-- **Booking** reserves a Venue for one Event and its Promoter, from a first to a last day, both included (FR-16). Its amount is fixed when it is created (FR-22), and its days never change (FR-23). Cancelling a Booking removes it, so its days are free at once (FR-31); who cancelled it and why travel in *Booking cancelled* (FR-32). A Booking that has ended stays until its Venue is removed.
+- **Booking** reserves a Venue for one Event and its Promoter, from a first to a last day, both included (FR-16). Its amount is fixed when it is created (FR-22), and its days never change (FR-23); a Rebooking replaces it with a new Booking (FR-19). Cancelling a Booking removes it, so its days are free at once (FR-31); who cancelled it and why travel in *Booking cancelled* (FR-32). A Booking that has ended stays until its Venue is removed.
 - **Rating** is Places' copy of the average Reviews computes for a Venue, with the time Reviews stamped it with, so that an older answer from Reviews can't replace a newer one (FR-33, FR-34). A Venue has no Rating until Places first reads one for it, and loses it when Reviews no longer lists the Venue.
 - **Event**, **Promoter** and **Venue Manager** belong to other groups: Events and Promoters to Promoters and Events (G2), users to Users (G4). Places keeps only their ids, the way Richardson's aggregates refer to what they don't own [@richardson2018, ch. 5]. It takes the Event and Promoter ids from Events' Booking requests and the Venue Manager's from the identity the Gateway forwards, and never asks the other groups about them.
 
@@ -57,7 +57,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 | `unlistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-37, NFR-2 |
 | `relistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-37, NFR-2 |
 | `deleteVenue` | Command | Venue Manager | US-8 | FR-9, FR-37 |
-| `requestBooking` | Command | Events | US-3, US-10 | FR-8, FR-16 to FR-22, FR-24, NFR-2 to NFR-4 |
+| `requestBooking` | Command | Events | US-3, US-4, US-10 | FR-8, FR-16 to FR-22, FR-24, FR-30, FR-32, NFR-2 to NFR-4 |
 | `cancelBooking` | Command | Events | US-4 | FR-23, FR-25, FR-30 to FR-32, NFR-2, NFR-4 |
 | `cancelVenueBooking` | Command | Venue Manager | US-9 | FR-29 to FR-32, FR-37, NFR-2, NFR-4 |
 | `searchVenues` | Query | Any user | US-1 | FR-8, FR-11 to FR-14, NFR-1, NFR-7 |
@@ -162,12 +162,12 @@ Preconditions
 Postconditions
 :   - The Venue is removed, together with its Rooms, its Rating and its Bookings, all of which have ended. Operations that name it now fail their first precondition, and `refreshRatings` no longer reads its Rating.
 
-No operation changes a Booking's days: Events moves a Booking by cancelling it with `cancelBooking` and calling `requestBooking` again (FR-23).
+No operation changes a Booking's days (FR-23): Events replaces a Booking with a Rebooking, a `requestBooking` that names the Booking it replaces (FR-19).
 
 #### `requestBooking` {.unnumbered .unlisted}
 
 Parameters
-:   An Event id, the id of the Event's Promoter, a Venue id, and a first and a last day, both included (FR-16).
+:   An Event id, the id of the Event's Promoter, a Venue id, a first and a last day, both included, and, optionally, the id of the Booking it replaces, which makes the request a Rebooking (FR-16).
 
 Result
 :   The new Booking's id and amount.
@@ -176,15 +176,17 @@ Preconditions
 :   - The request comes from Events (FR-16).
     - The Venue exists and is Listed (FR-8, FR-17).
     - The last day is not before the first day, and the first day is not before today in the Europe/Lisbon time zone (FR-20).
-    - No Booking of the Venue overlaps any of the days; otherwise the request is a conflict (FR-18).
-    - The Event has no Booking, at this Venue or any other (FR-19).
+    - No Booking of the Venue overlaps any of the days, apart from the Booking a Rebooking replaces, which doesn't count against them; otherwise the request is a conflict (FR-18).
+    - Without a Booking to replace, the Event has no Booking, at this Venue or any other; otherwise the request is a conflict (FR-19).
+    - For a Rebooking, the Booking it replaces exists and is the Event's (FR-19), and has not ended (FR-30).
 
 Postconditions
-:   - A Booking exists for the Event, its Promoter and the Venue, on those days (FR-16).
-    - Its amount is the number of days × the Venue's price per day at this moment, and stays so (FR-22).
-    - *Booking confirmed* is queued with the Booking, the Event, the Promoter, the Venue, the Venue Manager, the days and the amount (FR-24, NFR-4).
+:   - For a Rebooking, the Booking it replaces is removed, and *Booking cancelled* is queued for it with Events as who cancelled it (FR-32, NFR-4), in the same transaction as the rest.
+    - A Booking exists for the Event, its Promoter and the Venue, on those days (FR-16).
+    - Its amount is the number of days × the Venue's price per day at this moment, and stays so (FR-22), for a Rebooking too.
+    - *Booking confirmed* is queued with the Booking, the Event, the Promoter, the Venue, the Venue Manager, the days, the amount and, for a Rebooking, the Booking it replaces (FR-24, NFR-4).
 
-Places doesn't compare the Venue's capacity with the Event (FR-21). When two requests for overlapping days at one Venue arrive together, the first invariant lets exactly one of them create its Booking, and the other is rejected as a conflict (NFR-3).
+A Rebooking that fails any precondition changes nothing, so the Event keeps the Booking it names. Places doesn't compare the Venue's capacity with the Event (FR-21). When two requests for overlapping days at one Venue arrive together, the first invariant lets exactly one of them create its Booking, and the other is rejected as a conflict (NFR-3).
 
 #### `cancelBooking` {.unnumbered .unlisted}
 

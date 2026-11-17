@@ -411,6 +411,14 @@ paths:
         Places doesn't compare the Venue's capacity with the Event. Once
         the Booking is saved, Places publishes *Booking confirmed*.
 
+        A Rebooking names the Event's current Booking in
+        `replacesBookingId`. Places then cancels that Booking and creates
+        the new one in one transaction, so either both happen or nothing
+        changes. The old Booking doesn't count against the new days, and
+        any rejection leaves it standing. Places publishes *Booking
+        cancelled* for the old Booking, then *Booking confirmed* for the
+        new one, with `replacesBookingId`.
+
         **Access:** Events.
       security:
         - service: [events]
@@ -445,8 +453,10 @@ paths:
 
             - `/problems/days-taken`: a Booking of the Venue overlaps the days;
             - `/problems/event-already-booked`: the Event already has a
-              Booking;
-            - `/problems/venue-unlisted`: the Venue is Unlisted.
+              Booking, and the request has no `replacesBookingId`;
+            - `/problems/venue-unlisted`: the Venue is Unlisted;
+            - `/problems/booking-ended`: the Booking named in
+              `replacesBookingId` has ended.
           content:
             application/problem+json:
               schema:
@@ -457,7 +467,12 @@ paths:
                 status: 409
                 detail: A Booking of the Venue covers 2027-06-10.
         '422':
-          description: '`/problems/unknown-venue`: no Venue has the id `venueId`.'
+          description: |
+            The request names something that doesn't exist:
+
+            - `/problems/unknown-venue`: no Venue has the id `venueId`;
+            - `/problems/unknown-booking`: no Booking has the id
+              `replacesBookingId`, or it belongs to another Event.
           content:
             application/problem+json:
               schema:
@@ -779,6 +794,12 @@ components:
         lastDay:
           $ref: '#/components/schemas/Day'
           description: Not before `firstDay`.
+        replacesBookingId:
+          type: string
+          format: uuid
+          description: >-
+            For a Rebooking: the Event's current Booking, which Places
+            cancels in the same transaction that creates the new one.
     Booking:
       allOf:
         - $ref: '#/components/schemas/BookingRequest'

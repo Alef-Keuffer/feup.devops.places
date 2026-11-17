@@ -121,19 +121,25 @@ Requirements: FR-10, FR-15.
 *Scenario: the Event already has a Booking.*
 
 | **Given** an Event that already has a Booking
-| **When** Events sends another Booking request for that Event, at any Venue
+| **When** Events sends another Booking request for that Event, at any Venue, that doesn't name that Booking
 | **Then** Places rejects the request
 
 Requirements: FR-16 to FR-24.
 
-**US-4 Cancel or move a Booking.** As a Promoter, I want to cancel my Event's Booking, or move it by cancelling and booking again, so that the Venue's days are freed when my plans change.
+**US-4 Cancel or replace a Booking.** As a Promoter, I want to cancel my Event's Booking, or replace it with a Rebooking on other days or at another Venue, so that the Venue's days are freed when my plans change, and my Event never goes without a Venue in between.
 
-*Scenario: cancel and book again at once.*
+*Scenario: a Rebooking.*
 
 | **Given** an Event booked at a Venue on 6–8 June 2027
-| **When** Events cancels the Booking and, as soon as Places answers, requests the same Venue for the same Event on 7–9 June 2027
-| **Then** the new request succeeds, because the first Booking was cancelled before Places answered
+| **When** Events sends a Booking request for the same Event and Venue on 7–9 June 2027 that names the Event's Booking as the one it replaces
+| **Then** Places cancels the old Booking and creates the new one in one transaction, because the old Booking doesn't count against the new days
 | **And** Places publishes *Booking cancelled*, then *Booking confirmed*
+
+*Scenario: a Rebooking that fails.*
+
+| **Given** an Event booked at a Venue on 6–8 June 2027, and another Event's Booking at a second Venue on 10 June 2027
+| **When** Events sends a Rebooking of the first Event to the second Venue on 9–10 June 2027
+| **Then** Places rejects the request as a conflict, and the Event keeps its Booking on 6–8 June 2027
 
 *Scenario: the Event is cancelled.*
 
@@ -147,7 +153,7 @@ Requirements: FR-16 to FR-24.
 | **When** *Event cancelled* for that Event arrives, once or twice
 | **Then** Places changes nothing and publishes nothing
 
-Requirements: FR-23, FR-25 to FR-27, FR-30 to FR-32.
+Requirements: FR-16, FR-19, FR-22, FR-23, FR-25 to FR-27, FR-30 to FR-32.
 
 **US-5 Submit a Venue.** As a Venue Manager, I want to submit my Venue with its address, capacity, area, price per day, type, equipment, images and Rooms, so that Promoters can find and book it.
 
@@ -320,10 +326,10 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 
 | ID | Requirement |
 |-------|------------------------------------------------------------------------------|
-| FR-16 | Places shall accept a Booking request from Events that names an Event, its Promoter, a Venue, and a first and a last day, both included. |
+| FR-16 | Places shall accept a Booking request from Events that names an Event, its Promoter, a Venue, and a first and a last day, both included, and, for a Rebooking, the Event's Booking it replaces. |
 | FR-17 | Places shall reject a Booking request for a Venue that is Unlisted or does not exist. |
 | FR-18 | Places shall reject a Booking request as a conflict when a Booking for the same Venue overlaps any of its days. |
-| FR-19 | Places shall reject a Booking request for an Event that already has a Booking. |
+| FR-19 | Places shall reject a Booking request for an Event that already has a Booking, unless it is a Rebooking that names that Booking. A Rebooking shall cancel that Booking and create the new one in one transaction, so that either both happen or nothing changes. |
 | FR-20 | Places shall reject a Booking request whose last day is before its first day, or whose first day is before today in the Europe/Lisbon time zone. |
 | FR-21 | Places shall not check a Booking request against the Venue's capacity. |
 | FR-22 | Places shall set a Booking's amount, when it creates the Booking, to its number of days × the Venue's price per day, and shall not change the amount when the price changes later. |
@@ -417,7 +423,7 @@ The following are out of scope. Where another group or a later delivery covers a
 | Transferring a Venue to another Venue Manager | Not offered (FR-5). |
 | Booking a Room on its own | The Venue is the bookable unit; Rooms are part of its description. |
 | One Event at several Venues, or on separate days | Not offered: an Event holds at most one Booking, and separate days are separate Events (FR-19). |
-| Changing a Booking's days | Cancel and book again (FR-23, FR-25). |
+| Changing a Booking's days | Not offered: a Rebooking replaces the Booking with a new one, and a Booking's days never change (FR-19, FR-23). |
 | Checking the Event's expected attendance against the Venue's capacity | Capacity is a search filter; the Promoter sets the ticket cap, which can change after booking (FR-21). |
 | Hourly, seasonal or per-date pricing | Price per day only (FR-22). |
 | Distance search, keyword search and equipment filters | Not offered (FR-11). |
