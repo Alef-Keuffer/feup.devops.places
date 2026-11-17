@@ -10,22 +10,22 @@ These operations are REST calls, not messages, because each caller needs the ans
 
 ### Endpoints
 
-Table \ref{tab:endpoints} maps each operation to its endpoint. *Any user* means any user the Gateway forwards, whatever their roles. Where the last column says yes, the caller must also be the Venue's Venue Manager.
+Table \ref{tab:endpoints} maps each operation to its endpoint. *Any user* means any user the Gateway forwards. Where the last column says yes, the caller must also be the Venue's Venue Manager.
 
 | Endpoint | Operation | Success | Who may call it | Venue Manager only |
 |-----------------------------------------------|---------------------|--------|---------------|---------|
 | `GET /venues` | `searchVenues` | 200 | Any user, Events | No |
-| `POST /venues` | `submitVenue` | 201 | Venue Manager role | No |
+| `POST /venues` | `submitVenue` | 201 | Any user | No |
 | `GET /venues/{venueId}` | `getVenue` | 200 | Any user, Events, Tickets | No |
-| `PATCH /venues/{venueId}` | `updateVenue` | 204 | Venue Manager role | Yes |
-| `DELETE /venues/{venueId}` | `deleteVenue` | 204 | Venue Manager role | Yes |
-| `POST /venues/{venueId}/unlist` | `unlistVenue` | 204 | Venue Manager role | Yes |
-| `POST /venues/{venueId}/relist` | `relistVenue` | 204 | Venue Manager role | Yes |
+| `PATCH /venues/{venueId}` | `updateVenue` | 204 | Any user | Yes |
+| `DELETE /venues/{venueId}` | `deleteVenue` | 204 | Any user | Yes |
+| `POST /venues/{venueId}/unlist` | `unlistVenue` | 204 | Any user | Yes |
+| `POST /venues/{venueId}/relist` | `relistVenue` | 204 | Any user | Yes |
 | `GET /venues/{venueId}/availability` | `checkAvailability` | 200 | Any user | No |
-| `GET /venues/{venueId}/bookings` | `listVenueBookings` | 200 | Venue Manager role | Yes |
+| `GET /venues/{venueId}/bookings` | `listVenueBookings` | 200 | Any user | Yes |
 | `POST /bookings` | `requestBooking` | 201 | Events | No |
 | `DELETE /bookings/{bookingId}` | `cancelBooking` | 204 | Events | No |
-| `DELETE /venues/{venueId}/bookings/{bookingId}` | `cancelVenueBooking` | 204 | Venue Manager role | Yes |
+| `DELETE /venues/{venueId}/bookings/{bookingId}` | `cancelVenueBooking` | 204 | Any user | Yes |
 
 : The REST endpoints of Places. \label{tab:endpoints}
 
@@ -37,25 +37,26 @@ The endpoints are built around Places' two resources, Venues and Bookings. `GET`
 
 ### Identity and access
 
-The Gateway checks each user's token and forwards the request with the user's id and roles (FR-35), so Places never handles tokens: authenticating requests at the edge is one of the jobs Richardson gives an API gateway [@richardson2018, ch. 8]. Events and Tickets don't go through the Gateway, which serves users. They call Places directly on the platform's network and name themselves. This is how Places tells a call from Events apart from a user's, which the System operations section left to this one. Table \ref{tab:identity} lists the three headers.
+The Gateway checks each user's token and forwards the request with the user's id (FR-35), so Places never handles tokens: authenticating requests at the edge is one of the jobs Richardson gives an API gateway [@richardson2018, ch. 8]. Events and Tickets don't go through the Gateway, which serves users. They call Places directly on the platform's network and name themselves. This is how Places tells a call from Events apart from a user's, which the System operations section left to this one. Table \ref{tab:identity} lists the two headers.
 
 | Header | Set by | Value |
 |------------------|-------------------|------------------------------------------------------|
 | `X-User-Id` | The Gateway | The user's id. |
-| `X-User-Roles` | The Gateway | The user's roles, comma-separated: `promoter`, `venue-manager`, both, or none. |
 | `X-Service-Name` | Events or Tickets | `events` or `tickets`. |
 
 : The headers that identify the caller. \label{tab:identity}
 
 Places checks every request in three steps:
 
-1. A request that carries neither both `X-User-Id` and `X-User-Roles` nor `X-Service-Name` is rejected as unauthenticated, with 401 (FR-35).
-2. A request from a role or service that Table \ref{tab:endpoints} doesn't allow is rejected as forbidden, with 403 (FR-36). Places looks for the role it needs in the user's list, so a user with both roles may do whatever either role allows (FR-38).
-3. Where only the Venue's Venue Manager may call the endpoint, Places compares the caller's id with the Venue's Venue Manager, and rejects any other user as forbidden, with 403 (FR-37).
+1. A request that carries neither `X-User-Id` nor `X-Service-Name` is rejected as unauthenticated, with 401 (FR-35).
+2. A user calling an endpoint for Events, or a service calling one that Table \ref{tab:endpoints} doesn't allow it, is rejected as forbidden, with 403 (FR-37).
+3. Where only the Venue's Venue Manager may call the endpoint, Places compares the caller's id with the Venue's Venue Manager, and rejects any other user as forbidden, with 403 (FR-36).
 
-In `openapi.yaml`, the three headers are security schemes, and each operation's `security` lists the roles or the service it allows. OpenAPI 3.1 allows role names there for schemes other than OAuth [@openapi, sec. 4.8.30]. Each operation's description also says whether the caller must be the Venue's Venue Manager.
+Places takes no roles from the Gateway. Being a Venue Manager is a relation between a user and a Venue, which Places already stores (FR-5), not a kind of user the Gateway must know about, so every check Places makes on a user compares the caller's id with the Venue's Venue Manager. Richardson leaves such checks to the service that owns the data, as when only the consumer who placed an Order may read it, because a gateway can typically check only roles against paths and doesn't know a service's domain [@richardson2018, ch. 11]. Promoter and Venue Manager stay the two classes of user in the Actors table, told apart by the tasks they perform, as Wiegers and Beatty identify user classes, and one user can belong to both [@wiegers2013, ch. 6]. A `venue-manager` role would have gated `submitVenue` alone, and asked G4 to decide who gets it, which nobody had said. Any user may therefore submit a Venue, and becomes its Venue Manager. Someone could list a Venue that doesn't exist, which we accept for delivery 1: Venue approval, left out of it (FR-4), is the fix for a later delivery. Places ignores any `X-User-Roles` header.
 
-Places trusts these headers without checking them. That is safe only because users can reach Places through the Gateway alone (NFR-10), and because the Gateway removes all three headers from whatever a user sends before it sets its own. We ask G4 for both (L12). The headers still let any service inside the platform's network claim to be Events. Richardson's Access token pattern closes that gap: the Gateway passes each service a signed token, such as a JWT, holding the user's identity and roles, and the service checks the signature [@richardson2018, ch. 11]. We chose plain headers for delivery 1 because every group can set and read them without sharing keys. If G4 issues signed tokens, Places will check them instead, and the endpoints and the access rules stay the same.
+In `openapi.yaml`, the two headers are security schemes, and each operation's `security` says whether a user or which service may call it. Each operation's description also says whether the caller must be the Venue's Venue Manager.
+
+Places trusts these headers without checking them. That is safe only because users can reach Places through the Gateway alone (NFR-10), and because the Gateway removes both headers from whatever a user sends before it sets its own. We ask G4 for both (L12). The headers still let any service inside the platform's network claim to be Events. Richardson's Access token pattern closes that gap: the Gateway passes each service a signed token, such as a JWT, holding the user's identity and roles, and the service checks the signature [@richardson2018, ch. 11]. We chose plain headers for delivery 1 because every group can set and read them without sharing keys. If G4 issues signed tokens, Places will check them instead, and the endpoints and the access rules stay the same.
 
 ### Conventions
 
@@ -80,7 +81,7 @@ Every rejection that the System operations section names maps to one error respo
 |--------|-----------------------------------|----------------------------------------------------|
 | 400 | `about:blank` | A parameter or the body is malformed or out of range: for instance, a search whose number of days is less than 1 or longer than its window (FR-13), or a Booking request whose last day is before its first day, or whose first day has passed (FR-20). |
 | 401 | `about:blank` | The request names neither a user nor a service (FR-35). |
-| 403 | `about:blank` | The caller's role or service isn't allowed, or the caller isn't the Venue's Venue Manager (FR-36, FR-37). |
+| 403 | `about:blank` | A user called an endpoint for Events, a service called one it isn't allowed, or the caller isn't the Venue's Venue Manager (FR-36, FR-37). |
 | 404 | `about:blank` | No Venue or Booking has the id in the path, or the Booking isn't at that Venue. |
 | 409 | `/problems/days-taken` | A Booking of the Venue overlaps the requested days (FR-18). |
 | 409 | `/problems/event-already-booked` | The Event already has a Booking, and the request isn't a Rebooking (FR-19). |

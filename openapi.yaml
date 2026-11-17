@@ -12,24 +12,20 @@ info:
     ## Identity
 
     Users reach Places only through the Gateway (G4). The Gateway checks the
-    user's token and forwards the request with:
-
-    - `X-User-Id`: the user's id;
-    - `X-User-Roles`: the user's roles, comma-separated, from `promoter` and
-      `venue-manager`.
+    user's token and forwards the request with the user's id in `X-User-Id`.
+    Places takes no roles.
 
     Events (G2) and Tickets (G3) call Places directly on the platform's
     network and name themselves in `X-Service-Name`: `events` or `tickets`.
     Places trusts these headers because only the Gateway and the platform's
-    services can reach it, and it relies on the Gateway to remove any of the
-    three headers that a user sends. A request needs either both user
-    headers or `X-Service-Name`; Places rejects any other with 401.
+    services can reach it, and it relies on the Gateway to remove both
+    headers from whatever a user sends. A request needs `X-User-Id` or
+    `X-Service-Name`; Places rejects any other with 401.
 
-    Each operation's `security` says who may call it: a user, with the roles
-    listed (an empty list means any role), or a named service. Where the
-    caller must also be the Venue's Venue Manager, the operation says so;
-    Places checks the caller's id against the Venue's `venueManagerId` and
-    answers 403 if they differ.
+    Each operation's `security` says who may call it: a user or a named
+    service. Where the caller must also be the Venue's Venue Manager, the
+    operation says so; Places checks the caller's id against the Venue's
+    `venueManagerId` and answers 403 if they differ.
 
     ## Conventions
 
@@ -64,7 +60,6 @@ paths:
         **Access:** any user, or Events.
       security:
         - userId: []
-          userRoles: []
         - service: [events]
       parameters:
         - name: from
@@ -139,10 +134,9 @@ paths:
         Creates a Venue, Listed at once, with the caller as its Venue
         Manager. The Venue Manager can't be changed later.
 
-        **Access:** a user with the `venue-manager` role.
+        **Access:** any user.
       security:
         - userId: []
-          userRoles: [venue-manager]
       requestBody:
         required: true
         content:
@@ -177,7 +171,6 @@ paths:
         **Access:** any user, Events, or Tickets.
       security:
         - userId: []
-          userRoles: []
         - service: [events, tickets]
       responses:
         '200':
@@ -202,11 +195,9 @@ paths:
         replaced whole. A new `pricePerDay` applies only to Bookings created
         from now on.
 
-        **Access:** a user with the `venue-manager` role who is the Venue's
-        Venue Manager.
+        **Access:** the Venue's Venue Manager.
       security:
         - userId: []
-          userRoles: [venue-manager]
       requestBody:
         required: true
         content:
@@ -232,11 +223,9 @@ paths:
         Removes the Venue with its Rooms, its Rating and its Bookings, which
         must all have ended.
 
-        **Access:** a user with the `venue-manager` role who is the Venue's
-        Venue Manager.
+        **Access:** the Venue's Venue Manager.
       security:
         - userId: []
-          userRoles: [venue-manager]
       responses:
         '204':
           description: The Venue was removed.
@@ -269,11 +258,9 @@ paths:
         Takes a Listed Venue out of search. It accepts no new Bookings, and
         its existing Bookings stand.
 
-        **Access:** a user with the `venue-manager` role who is the Venue's
-        Venue Manager.
+        **Access:** the Venue's Venue Manager.
       security:
         - userId: []
-          userRoles: [venue-manager]
       responses:
         '204':
           description: The Venue is Unlisted.
@@ -304,11 +291,9 @@ paths:
         Puts an Unlisted Venue back in search, accepting Booking requests
         again.
 
-        **Access:** a user with the `venue-manager` role who is the Venue's
-        Venue Manager.
+        **Access:** the Venue's Venue Manager.
       security:
         - userId: []
-          userRoles: [venue-manager]
       responses:
         '204':
           description: The Venue is Listed.
@@ -343,7 +328,6 @@ paths:
         **Access:** any user.
       security:
         - userId: []
-          userRoles: []
       parameters:
         - name: firstDay
           in: query
@@ -381,11 +365,9 @@ paths:
       description: |
         Returns every Booking of the Venue, including those that have ended.
 
-        **Access:** a user with the `venue-manager` role who is the Venue's
-        Venue Manager.
+        **Access:** the Venue's Venue Manager.
       security:
         - userId: []
-          userRoles: [venue-manager]
       responses:
         '200':
           description: The Venue's Bookings.
@@ -537,11 +519,9 @@ paths:
         publishes *Booking cancelled*, saying that the Venue Manager
         cancelled it, with the reason if one was given.
 
-        **Access:** a user with the `venue-manager` role who is the Venue's
-        Venue Manager.
+        **Access:** the Venue's Venue Manager.
       security:
         - userId: []
-          userRoles: [venue-manager]
       parameters:
         - $ref: '#/components/parameters/Reason'
       responses:
@@ -568,13 +548,6 @@ components:
       in: header
       name: X-User-Id
       description: The user's id, a UUID, set by the Gateway.
-    userRoles:
-      type: apiKey
-      in: header
-      name: X-User-Roles
-      description: >-
-        The user's roles, comma-separated, set by the Gateway: `promoter`,
-        `venue-manager`, both, or none.
     service:
       type: apiKey
       in: header
