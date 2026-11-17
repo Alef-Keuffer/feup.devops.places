@@ -4,7 +4,7 @@ Richardson's first step turns the requirements into *system operations*: the req
 
 ## Domain model
 
-Figure \ref{fig:domain} shows the domain model. Its classes are the nouns of the user stories, which is where Richardson finds them [@richardson2019, sec. 2.2.1]^["The domain model is derived primarily from the nouns of the user stories" (p. 46)], and it uses the terms of the Vocabulary in the Application requirements section.
+Figure \ref{fig:domain} shows the domain model. Its classes are the nouns of the user stories, which is where Richardson primarily finds them [@richardson2019, sec. 2.2.1]^["The domain model is derived primarily from the nouns of the user stories" (p. 46)], and it uses the terms of the Vocabulary in the Application requirements section.
 
 ```{=latex}
 \begin{figure}[htbp]
