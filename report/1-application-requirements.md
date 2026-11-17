@@ -2,7 +2,7 @@
 
 Places is the subsystem of the Event Management system that group 5 builds. It keeps the catalogue of Venues that Promoters can hold Events in, and the calendar of which Venue is booked on which days. The other groups build the rest of the system: Reviews (G1), Promoters and Events (G2), Tickets and Billing (G3), and Users, the message broker and the Gateway (G4).
 
-This report follows the process Richardson gives for defining a microservice architecture [@richardson2018, sec. 2.2]. It starts from the application requirements in this section, derives the system operations from them, groups those operations into services, and then defines the service APIs and the collaborations between services. This section states the requirements the way Wiegers and Beatty recommend [@wiegers2013]: the actors, what they want to do as user stories with scenarios, the functional requirements as numbered "shall" statements that can each be tested, the non-functional requirements with how each is measured, and what is in and out of scope.
+This report follows the process Richardson gives for defining a microservice architecture [@richardson2019, sec. 2.2]. It starts from the application requirements in this section, derives the system operations from them, groups those operations into services, and then defines the service APIs and the collaborations between services. This section states the requirements the way Wiegers and Beatty recommend [@wiegers2013]: the actors, what they want to do as user stories with scenarios, the functional requirements as numbered "shall" statements that can each be tested, the non-functional requirements with how each is measured, and what is in and out of scope.
 
 ## Vocabulary
 
@@ -69,7 +69,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
 
 ## User stories
 
-Richardson starts from user stories, each with scenarios written as *given*, *when*, *then* [@richardson2018, sec. 2.2.1]. Wiegers and Beatty use the same pairing of a story with the scenarios that make it concrete [@wiegers2013, ch. 8]. Each story ends with the functional requirements that implement it. The dates are examples.
+Richardson starts from user stories, each with scenarios written as *given*, *when*, *then* [@richardson2019, sec. 2.2.1]. Wiegers and Beatty use the same pairing of a story with the scenarios that make it concrete [@wiegers2013, ch. 8]. Each story ends with the functional requirements that implement it. The dates are examples.
 
 **US-1 Find a Venue.** As a Promoter, I want to search the Listed Venues by dates, capacity, price, city, Rating and type, so that I only look at Venues that could host my Event.
 
