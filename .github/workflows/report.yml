@@ -35,7 +35,7 @@ jobs:
         with:
           path: tex.tar
           # Bump v1 to pick up newer Ubuntu TeX packages.
-          key: tex-${{ env.ImageOS }}-v1-${{ env.TEX_PACKAGES }}
+          key: tex-ubuntu-24.04-v1-${{ env.TEX_PACKAGES }}
       - name: Install xelatex and the LaTeX packages the report uses
         if: steps.tex.outputs.cache-hit != 'true'
         run: |
