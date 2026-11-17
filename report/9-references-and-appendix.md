@@ -12,3 +12,9 @@ This is `openapi.yaml`, from the root of the repository, as it stood when this r
 ```{=latex}
 \VerbatimInput[breaklines, fontsize=\footnotesize]{openapi.yaml}
 ```
+
+# Quotations
+
+```{=latex}
+\printendnotes
+```

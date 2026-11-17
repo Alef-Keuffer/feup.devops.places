@@ -1,3 +1,7 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.multipart,fit}
 \usepackage{fvextra}
+\usepackage{enotez}
+% The quotations appendix supplies the heading; print the notes under it.
+\setenotez{list-heading={}}
+\AtBeginDocument{\let\footnote\endnote}

@@ -19,3 +19,7 @@ To record a reply from another group, or to cut tickets for the report, follow `
 ### Consistency check
 
 To check the report, before a delivery or when asked, follow `.agents/skills/consistency-check/SKILL.md`.
+
+### Citation check
+
+To check the report's citations against the cited sources, follow the citation-check skill at `~/.claude/skills/citation-check`. That skill is a checkout of https://github.com/Alef-Keuffer/citation-check. This repo keeps no copy of the tool.
