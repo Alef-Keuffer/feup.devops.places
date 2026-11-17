@@ -26,4 +26,4 @@ Vocabulary: see `GLOSSARY.md`, unchanged. Decisions: see ADR-0002.
   | **Then** the Venue has no Rating, and a search with a minimum Rating leaves it out
 
 - System operations, the domain model's Rating (`2-system-operations.md`, "A Venue has no Rating until Places first reads one for it"), and Messaging, the chosen Rating option ("a Venue has no Rating until a refresh reads one for it"): each adds that a Venue loses its Rating when Reviews no longer lists it.
-- The `delivery-1` row of the revision history says so.
+- The `delivery-1-draft-0.2` row of the revision history says so.
