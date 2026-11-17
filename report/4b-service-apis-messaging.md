@@ -6,7 +6,7 @@ Besides its REST API, Places talks to the other groups through messages on the b
 
 ### Messages
 
-All three are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, the *Places topic*: a durable topic exchange named `places`, on which each message's routing key is its type, `BookingConfirmed` or `BookingCancelled`, so that a consumer binds only to the types it handles. It reads *Event cancelled* from the *Log topic*, on which Promoters and Events (G2) publishes its Event messages. G3 tells us that G4 runs RabbitMQ, which question L7 asks G4 to confirm.
+All three are what Richardson calls *event* messages: each states that something has happened in the domain of the group that sends it, and the sender doesn't need to know who acts on it [@richardson2018, sec. 3.3.1]. Each goes on a publish-subscribe channel, so every group that subscribes gets its own copy. Places publishes on a channel of its own, the *Places topic*: a durable topic exchange named `places`, on which each message's routing key is its type, `BookingConfirmed` or `BookingCancelled`, so that a consumer binds only to the types it handles. It reads *Event cancelled* from the *Log topic*, G2's durable topic exchange `events`, on which Promoters and Events (G2) publishes its Event messages with each message's type as its routing key (L4). G3 tells us that G4 runs RabbitMQ, which question L7 asks G4 to confirm.
 
 Messages are JSON, a text format every group's stack can read and write [@richardson2018, sec. 3.1.4], and follow the conventions of NFR-9 that the REST API section proposes (Table \ref{tab:conventions}): UUIDs for ids, ISO 8601 for dates and times, whole days in the Europe/Lisbon time zone, and amounts in EUR as decimal strings with two decimals. Each has a `type` field naming the message, so that a consumer can tell the messages on a channel apart without relying on the routing key. Every message Places sends carries the Booking id (NFR-6).
 
@@ -50,7 +50,7 @@ Producer
 :   Places, from `cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`, and `requestBooking` for the Booking a Rebooking replaces.
 
 Consumers
-:   Events (G2), which learns that its Event no longer has the Venue; when the Venue Manager cancelled, this message is the only way Events learns it. Billing (G3), which cancels the Booking's bill if the Promoter hasn't paid it yet.
+:   Events (G2), which matches the message to its Event by `bookingId` and ignores it when `cancelledBy` is `events`; when the Venue Manager cancelled, this message is the only way Events learns that its Event no longer has the Venue (L15). Billing (G3), which cancels the Booking's bill if the Promoter hasn't paid it yet.
 
 Sent when
 :   Places has cancelled a Booking, whoever cancelled it (FR-32).
@@ -81,11 +81,11 @@ Consumers
 Sent when
 :   An Event is cancelled. G2 also publishes *Event scheduled* and other messages on the Log topic, which Places ignores (FR-27).
 
-G2 designs this message, so the table lists only the fields Places relies on. We have asked G2 which messages go on the Log topic (L4).
+G2 designs this message, so the table lists only the fields Places relies on. Its routing key on the Log topic is its type, `EventCancelled` (L4).
 
 | Field | Type | Meaning |
 |------------------|-----------|---------------------------------------------------------------|
-| `type` | string | Names the message as *Event cancelled*, with whatever value G2 chooses. |
+| `type` | string | `EventCancelled`. |
 | `eventId` | UUID | The cancelled Event: the same id Events sent in its Booking request. |
 
 : The fields of *Event cancelled* that Places reads. \label{tab:event-cancelled}
@@ -214,12 +214,12 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 | # | Flow | What it carries | Why REST or the broker |
 |----|---------------------------|-------------------------------------|--------------------------------------|
 | 1 | Promoter or Venue Manager → Gateway → Places | Every user request, with the user id and roles the Gateway forwards: searches, reading a Venue, availability checks, Venue changes, a Venue's Bookings and their cancellation. | REST. A user waits for the answer. |
-| 2 | Events → Places | Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
+| 2 | Events → Places | Venues (`searchVenues`, `getVenue`), Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
 | 3 | Tickets → Places | A Venue by its id (`getVenue`), for its name and address. | REST. Tickets reads them once per Event, when Events publishes the Event, and Places publishes no messages about Venues that Tickets could keep a copy from. |
 | 4 | Events → Log topic → Places | *Event cancelled* (`handleEventCancelled`). | Broker. Events states the fact once for every group that cares, and needs no answer. |
 | 5 | Places → Reviews | Every Venue's Rating, in one call every five minutes (`refreshRatings`). | REST. Each refresh reads every Rating again, so a refresh that fails is put right by the next. Places keeps a copy of the Rating, so search doesn't call Reviews. |
 | 6 | Places → Places topic → Billing | *Booking confirmed* (`requestBooking`). | Broker. A Booking doesn't wait for Billing, and any other group that needs the fact can subscribe. |
-| 7 | Places → Places topic → Events, Billing | *Booking cancelled* (`cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`, and `requestBooking` for a Rebooking). | Broker. One message serves both groups, and it tells Events of a Venue Manager's cancellation without Events asking. |
+| 7 | Places → Places topic → Events, Billing | *Booking cancelled* (`cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`, and `requestBooking` for a Rebooking). | Broker. One message serves both groups, and it tells Events of a Venue Manager's cancellation without Events asking. Events consumes it and matches it by `bookingId`. |
 
 : The flows of Figure \ref{fig:collaborations}. \label{tab:flows}
 

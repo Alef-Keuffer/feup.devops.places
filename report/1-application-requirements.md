@@ -27,7 +27,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 |----------------|-------------|----------------------------------------------------------|
 | Promoter | User | Find Venues that suit an Event and check their days. Books and cancels through Events. |
 | Venue Manager | User | Submit Venues and keep them up to date, unlist and relist them, see their Bookings, and cancel a Booking when something unforeseen happens. |
-| Events (G2) | Service | Book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
+| Events (G2) | Service | Read Venues, book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
 | Reviews (G1) | Service | Nothing. Reviews decides who may rate a Venue and computes each Venue's Rating, which Places reads from it. |
 | Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking, and cancels the bill if the Booking is cancelled before it is paid. Tickets reads a Venue's name and address to print on tickets. |
 | Gateway (G4) | Service | Checks each user's token and forwards the user's id and roles to Places. G4 also runs the message broker. |
@@ -434,4 +434,5 @@ The following are out of scope. Where another group or a later delivery covers a
 | Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which reads none of Places' messages. Places reads each Venue's Rating from it (FR-33). |
 | Authenticating users | The Gateway (G4) checks the token and forwards the user id and roles (FR-35). |
 | Acting on *Event scheduled* or *Event ended* | Places ignores them (FR-27). |
+| *Venue updated*, a message telling other groups that a Venue's details changed | Not in delivery 1: Events reads a Venue with `GET /venues/{venueId}` when it needs it. A candidate for a later delivery. |
 | Deploying and operating Places (DevOps operations) | Later deliveries. In this report, "system operations" means the commands and queries Places handles. |

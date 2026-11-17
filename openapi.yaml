@@ -61,10 +61,11 @@ paths:
         Returns the Listed Venues that match every filter given. Unlisted
         Venues are never returned.
 
-        **Access:** any user.
+        **Access:** any user, or Events.
       security:
         - userId: []
           userRoles: []
+        - service: [events]
       parameters:
         - name: from
           in: query
@@ -170,13 +171,14 @@ paths:
       summary: Get a Venue
       description: |
         Returns the Venue, Listed or Unlisted. Tickets uses it for the
-        Venue's name and address.
+        Venue's name and address, and Events to read a Venue when it books,
+        publishes or shows an Event.
 
-        **Access:** any user, or Tickets.
+        **Access:** any user, Events, or Tickets.
       security:
         - userId: []
           userRoles: []
-        - service: [tickets]
+        - service: [events, tickets]
       responses:
         '200':
           description: The Venue.
