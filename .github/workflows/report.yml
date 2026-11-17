@@ -19,17 +19,38 @@ jobs:
 
   pdf:
     runs-on: ubuntu-24.04
+    env:
+      TEX_PACKAGES: lmodern texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the tags and the history to them, for the version report/version.lua prints
-      - uses: pandoc/actions/setup@v1
+      # The release's static binary; installing its .deb spent ~25 s in apt and dpkg.
+      - name: Install pandoc
+        run: gh release download 3.13 --repo jgm/pandoc --pattern '*linux-amd64.tar.gz' --output - | sudo tar -xz -C /usr/local/bin --strip-components 2 pandoc-3.13/bin/pandoc
+        env:
+          GH_TOKEN: ${{ github.token }}
+      # Installing takes about a minute, most of it tex-common building every TeX format,
+      # so the first run tars the installed files and the formats, and later runs untar them.
+      - id: tex
+        uses: actions/cache@v6
         with:
-          version: '3.13'
+          path: tex.tar
+          # Bump v1 to pick up newer Ubuntu TeX packages.
+          key: tex-ubuntu-24.04-v1-${{ env.TEX_PACKAGES }}
       - name: Install xelatex and the LaTeX packages the report uses
+        if: steps.tex.outputs.cache-hit != 'true'
         run: |
+          dpkg-query -W -f '${Package}\n' | sort > "$RUNNER_TEMP/before"
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends lmodern texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended
+          sudo apt-get install -y --no-install-recommends $TEX_PACKAGES
+          dpkg-query -W -f '${Package}\n' | sort | comm -13 "$RUNNER_TEMP/before" - | xargs dpkg -L \
+            | while read -r f; do if [ -f "$f" ] || [ -L "$f" ]; then echo "$f"; fi; done > "$RUNNER_TEMP/files"
+          # The formats, ls-R and updmap's maps are made by the install's triggers, so dpkg -L doesn't list them.
+          sudo tar -cf tex.tar -T "$RUNNER_TEMP/files" /var/lib/texmf /etc/texmf
+      - name: Restore xelatex from the cache
+        if: steps.tex.outputs.cache-hit == 'true'
+        run: sudo tar -xf tex.tar -C / && sudo ldconfig && fc-cache
       - run: pandoc -d report/pandoc.yaml
       - uses: actions/upload-artifact@v7
         with:
