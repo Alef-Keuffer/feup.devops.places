@@ -96,23 +96,30 @@ G2 designs this message, so the table lists only the fields Places relies on. We
 Reviews computes each Venue's Rating, and Places needs it for the minimum Rating filter of search (FR-11, FR-14) and to return with the Venue (FR-10). We considered three options.
 
 - **Ask Reviews for the Ratings on each search.** Rejected. A search with a minimum Rating would find the Venues that match its other filters, ask Reviews for the Rating of each, and drop those below the minimum in memory, so the filter couldn't be part of the SQL query that does the rest of the search. Every such search would wait on a call to Reviews, which puts the 2-second target of NFR-1 at risk, and would fail while Reviews is down, against NFR-7. Richardson's point is general: each synchronous call to another service while handling a request lowers the availability of the operation [@richardson2018, sec. 3.4.1].
-- **Keep a copy, updated from a *Rating changed* message.** Rejected, though it was our first choice. Richardson's remedy is for a service to replicate the data it needs from another service, kept up to date by the events that service publishes [@richardson2018, sec. 3.4.2]. That needs Reviews to publish the message, and Reviews publishes no messages: it offers each Venue's Rating only over REST (L6).
-- **Keep a copy, refreshed from Reviews' REST API (chosen).** Places keeps the copy and keeps it up to date the one way Reviews allows, by asking for it. Places then answers every search and `getVenue` from its own database, whether Reviews is up or not, and the minimum Rating filter stays in the SQL query. The cost is that a Venue's Rating can lag behind its latest review by up to five minutes, which matters little for a search filter, and that a Venue has no Rating until a refresh reads one for it (FR-14).
+- **Keep a copy, updated from a *Rating changed* message.** Rejected, though it was our first choice. Richardson's remedy is for a service to replicate the data it needs from another service, kept up to date by the events that service publishes [@richardson2018, sec. 3.4.2]. That needs Reviews to publish the message. G1 first declined, then said it might, pending a decision within its group, once it had agreed to return every Venue's Rating in one call. We told G1 that call is enough (L6). A refresh is one call every five minutes, and it corrects itself: each refresh reads every Rating again, so an answer that failed or was saved out of order is put right by the next one. A lost message, by contrast, would leave a Venue's Rating wrong until its next review, unless Reviews sent its messages as reliably as Places does through its outbox (Reliable delivery below), which we can't require of G1. All the message would add is freshness.
+- **Keep a copy, refreshed from Reviews' REST API (chosen).** Places keeps the copy and keeps it up to date by asking Reviews for every Venue's Rating, in one call every five minutes. Places then answers every search and `getVenue` from its own database, whether Reviews is up or not, and the minimum Rating filter stays in the SQL query. The cost is that a Venue's Rating can lag behind its latest review by up to five minutes, which matters little for a search filter, and that a Venue has no Rating until a refresh reads one for it (FR-14).
 
 #### Refreshing the Ratings {.unnumbered .unlisted}
 
-Every five minutes, Places runs `refreshRatings`: for each Venue, Listed or Unlisted, it calls Reviews' `GET /api/v1/ratings/venues/{venueId}` and saves the `average` and `stampedAt` of the answer (FR-33). When Reviews doesn't answer, the Venue keeps the Rating it holds until the next refresh, and search goes on using it (NFR-7). Each refresh makes one call per Venue, about three a second for the 1,000 Venues of NFR-1; we have asked Reviews for one call that returns many Ratings (L13).
+Every five minutes, Places runs `refreshRatings`, which makes one call, Reviews' `GET /api/v1/ratings/venues`. The answer lists the `venueId`, `average`, `count` and `stampedAt` of every Venue with at least one review, and Places saves each entry's `average` and `stampedAt` as that Venue's Rating, whether the Venue is Listed or Unlisted (FR-33). A Venue missing from the answer has no reviews, including one whose last review was removed by its author or by an administrator of Reviews. It loses the Rating it holds, and a search with a minimum Rating leaves it out (FR-14). When Reviews doesn't answer, every Venue keeps the Rating it holds until the next refresh, and search goes on using it (NFR-7).
 
-Two refreshes can overlap, when several copies of Places run or a refresh takes longer than five minutes, and the answer Reviews gave first could then be saved last, replacing a newer Rating with an older one. So Places replaces the Rating it holds only with one stamped no earlier (FR-34). Both stamps come from Reviews' clock, so the rule doesn't depend on Places' clock agreeing with Reviews'. Places applies the rule in one statement, which also changes nothing for a Venue removed in the meantime:
+Two refreshes can overlap, when several copies of Places run or a refresh takes longer than five minutes, and the answer Reviews gave first could then be saved last, replacing a newer Rating with an older one, or clearing it. So Places replaces the Rating it holds only with one stamped no earlier (FR-34). A Venue missing from the answer has no `stampedAt`, so Places compares its Rating with the answer's `Date` header instead: the time Reviews sent the answer, which a server with a clock must send on every successful answer [@rfc9110, sec. 6.6.1]. Places clears only a Rating stamped no later. Every stamp comes from Reviews' clock, so the rule doesn't depend on Places' clock agreeing with Reviews'. Places applies the rule with two statements, the first run for each entry in the answer, which also change nothing for a Venue removed in the meantime:
 
 ```sql
+-- each Venue in the answer
 UPDATE venue
 SET    rating_average = :average, rating_stamped_at = :stamped_at
 WHERE  id = :venue_id
 AND    (rating_stamped_at IS NULL OR rating_stamped_at <= :stamped_at);
+
+-- every Venue missing from the answer
+UPDATE venue
+SET    rating_average = NULL, rating_stamped_at = NULL
+WHERE  id <> ALL (:answer_venue_ids)
+AND    rating_stamped_at <= :answer_date;
 ```
 
-When two copies of Places run this for one Venue at once, the second waits for the first to commit, then checks its `WHERE` clause against the Rating the first wrote [@postgresql-isolation, sec. 13.2.1], so the older answer can't win the race.
+When two copies of Places run these for one Venue at once, the second waits for the first to commit, then checks its `WHERE` clause against the Rating the first wrote [@postgresql-isolation, sec. 13.2.1], so an older answer saved last can't replace a newer Rating or clear it. Two cases slip through, and the next refresh puts both right. `Date` counts whole seconds [@rfc9110, sec. 5.6.7], so a clearing within a second of a Rating's stamp can be refused or let through wrongly. And a Venue cleared by a newer answer has no Rating, so an older answer saved after it gives the Venue its old Rating back.
 
 #### Billing creates the bill from *Booking confirmed* {.unnumbered .unlisted}
 
@@ -207,11 +214,11 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 | 2 | Events → Places | Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
 | 3 | Tickets → Places | A Venue by its id (`getVenue`), for its name and address. | REST. Tickets reads them once per Event, when Events publishes the Event, and Places publishes no messages about Venues that Tickets could keep a copy from. |
 | 4 | Events → Log topic → Places | *Event cancelled* (`handleEventCancelled`). | Broker. Events states the fact once for every group that cares, and needs no answer. |
-| 5 | Places → Reviews | Each Venue's Rating, every five minutes (`refreshRatings`). | REST, the only interface Reviews offers. Places keeps a copy of the Rating, so search doesn't call Reviews. |
+| 5 | Places → Reviews | Every Venue's Rating, in one call every five minutes (`refreshRatings`). | REST. Each refresh reads every Rating again, so a refresh that fails is put right by the next. Places keeps a copy of the Rating, so search doesn't call Reviews. |
 | 6 | Places → Places topic → Billing | *Booking confirmed* (`requestBooking`). | Broker. A Booking doesn't wait for Billing, and any other group that needs the fact can subscribe. |
 | 7 | Places → Places topic → Events, Billing | *Booking cancelled* (`cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`). | Broker. One message serves both groups, and it tells Events of a Venue Manager's cancellation without Events asking. |
 
 : The flows of Figure \ref{fig:collaborations}. \label{tab:flows}
 
-Events and Tickets, in flows 2 and 3, call Places directly rather than through the Gateway, and name themselves with the `X-Service-Name` header (Table \ref{tab:identity}). Places calls Reviews the same way in flow 5, as `places`, which we have asked G1 to accept (L13).
+Events and Tickets, in flows 2 and 3, call Places directly rather than through the Gateway, and name themselves with the `X-Service-Name` header (Table \ref{tab:identity}). Places calls Reviews the same way in flow 5, as `places`, which G1 accepts, since its Rating calls only read (L13).
 G3 has confirmed that Tickets reads a Venue with a REST GET.

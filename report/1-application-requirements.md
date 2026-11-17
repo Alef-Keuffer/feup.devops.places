@@ -12,7 +12,7 @@ The report uses these terms with these meanings only.
 |------------|------------------------------------------------------------------------|
 | Venue | A physical site submitted to the platform, with an address, images and a Rating. It is the unit a Promoter books for an Event. |
 | Room | A named part of a Venue, shown in the Venue's description with its own capacity, area and layout. A Room is never booked on its own. |
-| Promoter | A user who organises Events, books Venues for them, and rates the Venues they booked. |
+| Promoter | A user who organises Events and books Venues for them. |
 | Venue Manager | The user who submits a Venue to the platform and the only one allowed to change it and its Rooms. The same person may also be a Promoter. |
 | Listed | A Venue that appears in search and accepts new Bookings. A Venue is Listed as soon as it is submitted. |
 | Unlisted | A Venue its Venue Manager has taken out of search. It accepts no new Bookings, but its existing Bookings stand. |
@@ -25,7 +25,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 
 | Actor | Kind | What it needs from Places |
 |----------------|-------------|----------------------------------------------------------|
-| Promoter | User | Find Venues that suit an Event and check their days. Books and cancels through Events, and rates through Reviews. |
+| Promoter | User | Find Venues that suit an Event and check their days. Books and cancels through Events. |
 | Venue Manager | User | Submit Venues and keep them up to date, unlist and relist them, see their Bookings, and cancel a Booking when something unforeseen happens. |
 | Events (G2) | Service | Book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
 | Reviews (G1) | Service | Nothing. Reviews decides who may rate a Venue and computes each Venue's Rating, which Places reads from it. |

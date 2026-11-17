@@ -317,6 +317,7 @@ Preconditions
 :   - None.
 
 Postconditions
-:   - Places has asked Reviews for the Rating of each Venue, with its average and the time Reviews stamped it with.
-    - A Venue whose answer is stamped no earlier than the Rating it holds, or that had no Rating, now has the answer's average and stamp as its Rating, and search and `getVenue` use it (FR-33).
-    - Every other Venue keeps the Rating it holds, if any: when the answer is stamped earlier (FR-34), when Reviews didn't answer for it (FR-33), and when Reviews has no Rating for it. A Venue removed meanwhile gets no Rating.
+:   - Places has asked Reviews once for every Venue's Rating. The answer lists each Venue with reviews, with its average and the time Reviews stamped it with, and carries the time Reviews sent it in its `Date` header.
+    - A Venue in the answer whose entry is stamped no earlier than the Rating it holds, or that had no Rating, now has the entry's average and stamp as its Rating, and search and `getVenue` use it (FR-33).
+    - A Venue missing from the answer, whose Rating is stamped no later than the answer's `Date`, now has no Rating, so a search with a minimum Rating leaves it out (FR-14).
+    - Every other Venue keeps the Rating it holds, if any: when its entry or the answer is stamped earlier (FR-34), and when Reviews didn't answer (FR-33). A Venue removed meanwhile gets no Rating.
