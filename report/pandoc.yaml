@@ -1,4 +1,6 @@
-# Builds the report: pandoc -d report/pandoc.yaml
+# Builds the report. Pass -o so the PDF is named with the version on the title page,
+# which is the tag on a tagged commit:
+#   pandoc -d report/pandoc.yaml -o "report/$(git describe --tags --always --dirty).pdf"
 # Sections are concatenated in this order; a new section file goes here.
 input-files:
   - ${.}/0-revision-history.md
@@ -9,7 +11,6 @@ input-files:
   - ${.}/4b-service-apis-messaging.md
   - ${.}/5-open-points.md
   - ${.}/9-references-and-appendix.md
-output-file: ${.}/places-delivery-1.pdf
 pdf-engine: xelatex
 filters:
   - ${.}/version.lua

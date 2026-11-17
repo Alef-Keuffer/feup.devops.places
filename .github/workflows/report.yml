@@ -51,10 +51,22 @@ jobs:
       - name: Restore xelatex from the cache
         if: steps.tex.outputs.cache-hit == 'true'
         run: sudo tar -xf tex.tar -C / && sudo ldconfig && fc-cache
-      - run: pandoc -d report/pandoc.yaml
+      - id: pdf
+        name: Build the report
+        run: |
+          # On a tag the file is the tag's name, the same name the release is published under.
+          # Otherwise it is the version the title page prints.
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            version="$GITHUB_REF_NAME"
+          else
+            version=$(git describe --tags --always --dirty)
+          fi
+          pandoc -d report/pandoc.yaml -o "report/${version}.pdf"
+          echo "filename=${version}.pdf" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         with:
-          path: report/places-delivery-1.pdf
+          name: ${{ steps.pdf.outputs.filename }}
+          path: report/${{ steps.pdf.outputs.filename }}
           archive: false
           if-no-files-found: error
 
@@ -68,7 +80,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          name: places-delivery-1.pdf
+          name: ${{ github.ref_name }}.pdf
       - run: gh release create "$GITHUB_REF_NAME" ./*.pdf --repo "$GITHUB_REPOSITORY" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
