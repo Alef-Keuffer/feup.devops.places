@@ -1,6 +1,6 @@
 # Open points
 
-Delivery 1 leaves some points open, and this section collects them: what Billing's choice on refunds means for Promoters, what delivery 1 leaves out, and the questions for the professor and the other groups. Wiegers and Beatty advise marking each piece of information that is still missing, rather than leaving the gap unstated, and resolving it before the requirements it affects are implemented [@wiegers2013, ch. 10]. For each question, this section gives the position the report takes until the answer comes.
+Delivery 1 leaves some points open, and this section collects them: what Billing's choice on refunds means for Promoters, what delivery 1 leaves out, and the questions for the professor and the other groups. Wiegers and Beatty advise flagging a known gap in a requirement as TBD, and resolving those gaps before implementing the set of requirements [@wiegers2013, ch. 10]^["Sometimes you know that you lack a piece of information about a specific requirement. Use the notation TBD (to be determined) to flag these knowledge gaps. Plan to resolve all TBDs before implementing a set of requirements." (p. 188)]. For each question, this section gives the position the report takes until the answer comes.
 
 ## Paid bills are not refunded
 

@@ -2,7 +2,7 @@
 
 # Revision history {.unnumbered}
 
-Wiegers and Beatty ask that each circulated version of a requirements document carry a revision history [@wiegers2013, ch. 27]. Each version of this report is a tag in the group's repository, and the title page names the version the PDF was built from. Table \ref{tab:revisions} lists each version, when it was released, what changed and why. Who made each change is in the repository's history.
+Wiegers and Beatty ask that each circulated version of a requirements document carry a revision history [@wiegers2013, ch. 27]^["Each circulated version of a requirements document or each requirement in a tool should include a revision history that identifies the changes made, the date of each change, the individual who made the change, and the reason for each change." (p. 460)]. Each version of this report is a tag in the group's repository, and the title page names the version the PDF was built from. Table \ref{tab:revisions} lists each version, when it was released, what changed and why. Who made each change is in the repository's history.
 
 | Version | Date | What changed | Why |
 |----------------------------|------------|----------------------------------------|--------------------|

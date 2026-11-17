@@ -2,7 +2,7 @@
 
 Places is the subsystem of the Event Management system that group 5 builds. It keeps the catalogue of Venues that Promoters can hold Events in, and the calendar of which Venue is booked on which days. The other groups build the rest of the system: Reviews (G1), Promoters and Events (G2), Tickets and Billing (G3), and Users, the message broker and the Gateway (G4).
 
-This report follows the process Richardson gives for defining a microservice architecture [@richardson2019, sec. 2.2]. It starts from the application requirements in this section, derives the system operations from them, groups those operations into services, and then defines the service APIs and the collaborations between services. This section states the requirements the way Wiegers and Beatty recommend [@wiegers2013]: the actors, what they want to do as user stories with scenarios, the functional requirements as numbered "shall" statements that can each be tested, the non-functional requirements with how each is measured, and what is in and out of scope.
+This report follows the process Richardson gives for defining a microservice architecture [@richardson2019, sec. 2.2]^["Figure 2.5 A three-step process for defining an application’s microservice architecture" (p. 44); "The first step in defining an application’s architecture is to define the system operations. The starting point is the application’s requirements, including user stories and their associated user scenarios." (p. 45); "The second step in the process is to determine the decomposition into services." (p. 45); "The third step in defining the application’s architecture is to determine each service’s API. To do that, you assign each system operation identified in the first step to a service." (p. 45); "In that case, you determine how the services collaborate, which typically requires services to support additional operations." (p. 45)]. It starts from the application requirements in this section, derives the system operations from them, groups those operations into services, and then defines the service APIs and the collaborations between services. This section states the requirements the way Wiegers and Beatty recommend [@wiegers2013]^["Rather than thinking of “the user” in singular, spend some time identifying the multiple user classes and their roles and privileges for your product." (p. 102); "The user class—which need not be a human being—in a user story corresponds to the primary actor in a use case." (p. 145); "As used on agile development projects, a user story is a “short, simple description of a feature told from the perspective of the person who desires the new capability, usually a user or customer of the system”" (p. 145); "The simplest approach gives every requirement a unique sequence number, such as UC-9 or FR-26." (p. 187); "“The system shall” or “The user shall,” followed by an action verb, followed by the observable result." (p. 207); "Can a tester devise tests or other verification approaches to determine whether each requirement is properly implemented?" (p. 205); "Such characteristics, collectively known as quality attributes, quality factors, quality requirements, quality of service requirements, or the “–ilities,” constitute a major portion of the system’s nonfunctional requirements." (p. 261); "Indicate the scale or units of measure for each attribute and the target, minimum, and maximum values." (p. 267); "Similarly, a software project should define its scope and limitations. You need to state both what the solution being developed is and what it is not." (p. 88)]: the actors, user stories of what someone needs, the functional requirements as numbered "shall" statements that can each be tested, the non-functional requirements with how each is measured, and what is in and out of scope.
 
 ## Vocabulary
 
@@ -21,7 +21,7 @@ The report uses these terms with these meanings only.
 
 ## Actors
 
-Wiegers and Beatty separate the classes of people who use a system from the other systems it exchanges data with [@wiegers2013, chs. 5–6]. Places has two classes of user and four collaborating services. Users never reach Places directly: they go through the Gateway, which tells Places who they are.
+On Wiegers and Beatty's context diagram, an external entity may be a user class or another system [@wiegers2013, chs. 5–6]^["The external entities in the rectangles can represent user classes (Chemist, Buyer), organizations (Health and Safety Department), other systems (Training Database), or hardware devices (Bar Code Reader)." (p. 93)]. Places has two classes of user and four collaborating services. Users never reach Places directly: they go through the Gateway, which tells Places who they are.
 
 | Actor | Kind | What it needs from Places |
 |----------------|-------------|----------------------------------------------------------|
@@ -32,7 +32,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 | Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking, and cancels the bill if the Booking is cancelled before it is paid. Tickets reads a Venue's name and address to print on tickets. |
 | Gateway (G4) | Service | Checks each user's token and forwards the user's id to Places. G4 also runs the message broker. |
 
-Figure \ref{fig:context} shows these actors around Places in a context diagram [@wiegers2013, ch. 5]. It shows what flows between them, not how: the Service APIs and collaborations section says which flows are REST calls and which are messages through the broker.
+Figure \ref{fig:context} shows these actors around Places in a context diagram [@wiegers2013, ch. 5]^["The context diagram visually illustrates this boundary. It identifies external entities (also called terminators) outside the system that interface to it in some way, as well as data, control, and material flows between the terminators and the system." (p. 92); "The entire system is depicted as a single circle; the context diagram deliberately provides no visibility into the system’s internal objects, processes, or data." (p. 93)]. It shows what flows between them, not how: the Service APIs and collaborations section says which flows are REST calls and which are messages through the broker.
 
 ```{=latex}
 \begin{figure}[htbp]
@@ -69,7 +69,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
 
 ## User stories
 
-Richardson starts from user stories, each with scenarios written as *given*, *when*, *then* [@richardson2019, sec. 2.2.1]. Wiegers and Beatty use the same pairing of a story with the scenarios that make it concrete [@wiegers2013, ch. 8]. Each story ends with the functional requirements that implement it. The dates are examples.
+Richardson starts from user stories and their scenarios, and he writes a scenario as *given*, *when*, *then* [@richardson2019, sec. 2.2.1]^["The starting point is the application’s requirements, including user stories and their associated user scenarios." (p. 45); "Given a consumer And a restaurant And a delivery address/time that can be served by that restaurant And an order total that meets the restaurant's order minimum When the consumer places an order for the restaurant Then consumer's credit card is authorized" (p. 47)]. Wiegers and Beatty describe a user story as a short description of what someone needs, and say that it sometimes stands for a single scenario [@wiegers2013, ch. 8]^["As used on agile development projects, a user story is a “short, simple description of a feature told from the perspective of the person who desires the new capability, usually a user or customer of the system”" (p. 145); "In the agile world, a user story sometimes covers the same scope as an entire use case, but in other cases a user story represents just a single scenario or alternative flow." (p. 152)]. Each story ends with the functional requirements that implement it. The dates are examples.
 
 **US-1 Find a Venue.** As a Promoter, I want to search the Listed Venues by dates, capacity, price, city, Rating and type, so that I only look at Venues that could host my Event.
 
@@ -301,7 +301,7 @@ Requirements: FR-10.
 
 ## Functional requirements
 
-Each requirement is a single "shall" statement that a test can pass or fail [@wiegers2013, ch. 11]. They are grouped by feature [@wiegers2013, ch. 10]. A Booking *has ended* once its last day is past, in the Europe/Lisbon time zone.
+Each requirement is a "shall" statement for which a tester can devise a test [@wiegers2013, ch. 11]^["“The system shall” or “The user shall,” followed by an action verb, followed by the observable result." (p. 207); "Can a tester devise tests or other verification approaches to determine whether each requirement is properly implemented?" (p. 205)]. They are grouped by feature [@wiegers2013, ch. 10]^["The template in Figure 10-2 shows functional requirements organized by system feature, which is just one possible way to arrange them." (p. 194)]. A Booking *has ended* once its last day is past, in the Europe/Lisbon time zone.
 
 #### Venue catalogue {.unnumbered .unlisted}
 
@@ -373,7 +373,7 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 
 ## Non-functional requirements
 
-Each non-functional requirement comes with the measure that decides whether Places meets it [@wiegers2013, ch. 14]. The load figures in NFR-1 are our own assumption, since no group has stated an expected load.
+Each non-functional requirement comes with the measure that decides whether Places meets it [@wiegers2013, ch. 14]^["Such characteristics, collectively known as quality attributes, quality factors, quality requirements, quality of service requirements, or the “–ilities,” constitute a major portion of the system’s nonfunctional requirements." (p. 261); "Indicate the scale or units of measure for each attribute and the target, minimum, and maximum values." (p. 267)]. The load figures in NFR-1 are our own assumption, since no group has stated an expected load.
 
 #### Performance {.unnumbered .unlisted}
 
@@ -401,8 +401,8 @@ Each non-functional requirement comes with the measure that decides whether Plac
 
 | ID | Requirement | How it is measured |
 |--------|------------------------------------------|----------------------------------------|
-| NFR-8 | Places' REST API shall be described in one OpenAPI document [@openapi] that lints without errors. | `npx @redocly/cli lint openapi.yaml` exits with status 0. |
-| NFR-9 | Places' API and messages shall use UUIDs for ids, ISO 8601 for dates and times, the Europe/Lisbon time zone for whole days, EUR for amounts, and RFC 9457 `application/problem+json` documents for errors [@rfc9457]. | Inspection of the OpenAPI document and message schemas, and a test of each error response. |
+| NFR-8 | Places' REST API shall be described in one OpenAPI document, a single document that conforms to the OpenAPI Specification [@openapi]^["The OpenAPI Specification (OAS) defines a standard, programming language-agnostic interface description for HTTP APIs, which allows both humans and computers to discover and understand the capabilities of a service without requiring access to source code, additional documentation, or inspection of network traffic."; "An OpenAPI Document is a single JSON or YAML document that conforms to the OpenAPI Specification."]. It shall lint without errors. | `npx @redocly/cli lint openapi.yaml` exits with status 0. |
+| NFR-9 | Places' API and messages shall use UUIDs for ids, ISO 8601 for dates and times, the Europe/Lisbon time zone for whole days, and EUR for amounts. Errors shall be problem details, which use the `application/problem+json` media type [@rfc9457]^["This specification's aim is to define common error formats for applications that need one so that they aren't required to define their own"; "The canonical model for problem details is a JSON [JSON] object. When serialized in a JSON document, that format is identified with the “application/problem+json” media type."]. | Inspection of the OpenAPI document and message schemas, and a test of each error response. |
 
 #### Security {.unnumbered .unlisted}
 
@@ -414,7 +414,7 @@ Each non-functional requirement comes with the measure that decides whether Plac
 
 | ID | Requirement | How it is measured |
 |--------|------------------------------------------|----------------------------------------|
-| NFR-11 | Places shall keep its data in its own PostgreSQL database, which no other service reads or writes, and shall prevent overlapping Bookings in the database with an exclusion constraint [@postgresql]. Other services reach Places only through its REST API and broker messages. | Inspection of the schema and the deployment: only Places holds the database credentials. |
+| NFR-11 | Places shall keep its data in its own PostgreSQL database, which no other service reads or writes, and shall prevent overlapping Bookings in the database with an exclusion constraint. Exclusion constraints ensure that if any two rows are compared on the specified columns or expressions using the specified operators, at least one of these operator comparisons will return false or null [@postgresql]^["Exclusion constraints ensure that if any two rows are compared on the specified columns or expressions using the specified operators, at least one of these operator comparisons will return false or null."]. Other services reach Places only through its REST API and broker messages. | Inspection of the schema and the deployment: only Places holds the database credentials. |
 | NFR-12 | Places shall be built and deployed as one service that owns the Venue catalogue, the Bookings and the Ratings in one database. | Inspection of the deployment. |
 
 ## Scope
