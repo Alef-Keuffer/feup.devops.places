@@ -60,9 +60,9 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 | `requestBooking` | Command | Events | US-3, US-4, US-10 | FR-8, FR-16 to FR-22, FR-24, FR-30, FR-32, NFR-2 to NFR-4 |
 | `cancelBooking` | Command | Events | US-4 | FR-23, FR-25, FR-30 to FR-32, NFR-2, NFR-4 |
 | `cancelVenueBooking` | Command | Venue Manager | US-9 | FR-29 to FR-32, FR-37, NFR-2, NFR-4 |
-| `searchVenues` | Query | Any user | US-1 | FR-8, FR-11 to FR-14, NFR-1, NFR-7 |
+| `searchVenues` | Query | Any user, Events | US-1 | FR-8, FR-11 to FR-14, NFR-1, NFR-7 |
 | `checkAvailability` | Query | Any user | US-2 | FR-15, NFR-1, NFR-7 |
-| `getVenue` | Query | Any user, Tickets | US-12 | FR-3, FR-10, FR-33, NFR-7 |
+| `getVenue` | Query | Any user, Events, Tickets | US-12 | FR-3, FR-10, FR-33, NFR-7 |
 | `listVenueBookings` | Query | Venue Manager | US-9 | FR-28, FR-37 |
 | `handleEventCancelled` | Command | Events, through the Log topic | US-4 | FR-26, FR-27, FR-30 to FR-32, NFR-4, NFR-5 |
 | `refreshRatings` | Command | Places itself, every five minutes | US-11 | FR-33, FR-34, NFR-7 |
@@ -262,7 +262,7 @@ Postconditions
 #### `getVenue` {.unnumbered .unlisted}
 
 Parameters
-:   A Venue id. The caller is a user or Tickets (US-12).
+:   A Venue id. The caller is a user, Events or Tickets (US-12).
 
 Result
 :   The Venue, Listed or Unlisted, with its details, its Rooms, its number of Rooms and its Rating if it has one (FR-3, FR-10, FR-33).

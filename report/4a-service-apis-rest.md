@@ -14,9 +14,9 @@ Table \ref{tab:endpoints} maps each operation to its endpoint. *Any user* means 
 
 | Endpoint | Operation | Success | Who may call it | Venue Manager only |
 |-----------------------------------------------|---------------------|--------|---------------|---------|
-| `GET /venues` | `searchVenues` | 200 | Any user | No |
+| `GET /venues` | `searchVenues` | 200 | Any user, Events | No |
 | `POST /venues` | `submitVenue` | 201 | Venue Manager role | No |
-| `GET /venues/{venueId}` | `getVenue` | 200 | Any user, Tickets | No |
+| `GET /venues/{venueId}` | `getVenue` | 200 | Any user, Events, Tickets | No |
 | `PATCH /venues/{venueId}` | `updateVenue` | 204 | Venue Manager role | Yes |
 | `DELETE /venues/{venueId}` | `deleteVenue` | 204 | Venue Manager role | Yes |
 | `POST /venues/{venueId}/unlist` | `unlistVenue` | 204 | Venue Manager role | Yes |
