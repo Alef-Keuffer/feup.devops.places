@@ -430,6 +430,7 @@ The following are out of scope. Where another group or a later delivery covers a
 | Blocking days outside Bookings, such as for maintenance or rentals made outside the platform | Not in delivery 1; question L1 asks the professor. |
 | Creating bills | Billing (G3) creates the bill from *Booking confirmed* (FR-24). |
 | Cancelling bills, refunds and cancellation fees | Billing (G3) cancels an unpaid bill when *Booking cancelled* arrives. For delivery 1 it refunds no paid bill and charges no fee, whoever cancelled the Booking. |
+| Paying the Venue Manager a Booking's amount | Billing (G3) collects the amount but pays no one out in delivery 1, and keeps `venueManagerId` on each bill. |
 | Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which reads none of Places' messages. Places reads each Venue's Rating from it (FR-33). |
 | Authenticating users | The Gateway (G4) checks the token and forwards the user id and roles (FR-35). |
 | Acting on *Event scheduled* or *Event ended* | Places ignores them (FR-27). |
