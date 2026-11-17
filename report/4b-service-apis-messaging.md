@@ -33,7 +33,7 @@ Sent when
 | `eventId` | UUID | The Event the Venue is booked for. |
 | `promoterId` | UUID | The Event's Promoter, whom Billing bills, by user id: the value the Gateway forwards as `X-User-Id` (Table \ref{tab:identity}). |
 | `venueId` | UUID | The Venue booked. |
-| `venueManagerId` | UUID | The Venue's Venue Manager. |
+| `venueManagerId` | UUID | The Venue's Venue Manager. Billing stores it on each bill, for paying the Venue Manager in a later delivery. |
 | `firstDay` | date | The first day of the Booking. |
 | `lastDay` | date | The last day of the Booking, included. |
 | `amount` | string | The number of days × the Venue's price per day when the Booking was created (FR-22): an amount in EUR as a decimal string with two decimals, such as `"800.00"`. |
@@ -156,9 +156,9 @@ The relay adds up to a second between a change and its message. Billing doesn't 
 
 #### Consumers deduplicate by Booking id {.unnumbered .unlisted}
 
-Richardson gives a consumer two ways to cope with a duplicate: make its handler idempotent, so that handling a message twice has the effect of handling it once, or record the ids of the messages it has handled and discard those it sees again [@richardson2018, sec. 3.3.6]. A Booking is confirmed once and cancelled at most once, so a message's type and Booking id identify it, and consumers need no separate message id. We ask each consumer to key what it keeps on the Booking id.
+Richardson gives a consumer two ways to cope with a duplicate: make its handler idempotent, so that handling a message twice has the effect of handling it once, or record the ids of the messages it has handled and discard those it sees again [@richardson2018, sec. 3.3.6]. A Booking is confirmed once and cancelled at most once, so a message's type and Booking id identify it, and consumers need no separate message id. We ask each consumer to key what it keeps on the Booking id, and G3 has adopted this for Billing.
 
-- **Billing** creates at most one bill per Booking id, so a second *Booking confirmed* for a Booking is dropped, and a second *Booking cancelled* finds the bill already cancelled. If *Booking cancelled* arrives first, Billing must remember the Booking as cancelled, whatever arrives after it, or a late *Booking confirmed* would bill a Booking that no longer exists.
+- **Billing** keeps one bill per Booking id, so a second *Booking confirmed* for a Booking creates nothing, and cancelling a cancelled bill changes nothing. If *Booking cancelled* arrives for a Booking with no bill, Billing records the Booking as cancelled, and a later *Booking confirmed* for it creates no bill, so Billing never bills a Booking that no longer exists.
 - **Events** reads *Booking cancelled* as news about the Booking it names, not about the Event. Keyed on the Event, a duplicate would do harm: a Rebooking replaces an Event's Booking with a new one (US-4), and a late copy of the first Booking's *Booking cancelled* would then seem to cancel the new one. Keyed on the Booking id, the copy matches no Booking Events holds, and changes nothing.
 
 #### Places' handlers are safe to run twice {.unnumbered .unlisted}
