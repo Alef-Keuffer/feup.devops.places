@@ -48,7 +48,7 @@ Two invariants hold at all times, even when requests arrive at the same moment. 
 
 ## Operations
 
-Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35, they cover every functional requirement, FR-1 to FR-36. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1].
+Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35 and FR-37, they cover every functional requirement, FR-1 to FR-37. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1].
 
 | Operation | Kind | Actor | Story | Requirements |
 |----------------------------|------------|--------------------------|----------|----------------------------------|
@@ -71,7 +71,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 
 These rules apply to every operation, so the specifications below don't repeat them:
 
-- Every operation a user calls carries the caller's user id, which the Gateway forwards. Places rejects a user request without it as unauthenticated (FR-35). The specifications call this user the *caller*. `requestBooking` and `cancelBooking` are for Events alone; the REST API section says how Places tells a call from Events apart from a user's.
+- Every operation a user calls carries the caller's user id, which the Gateway forwards. Places rejects a user request without it as unauthenticated (FR-35). The specifications call this user the *caller*. `requestBooking` and `cancelBooking` are for Events alone, and Events and Tickets may call only the operations Table \ref{tab:operations} names them for; Places rejects any other call as forbidden (FR-37). The REST API section says how Places tells a call from Events apart from a user's.
 - When a precondition doesn't hold, Places rejects the operation and changes nothing. Where a requirement names the rejection (a conflict, or forbidden), the precondition says so; the REST API section maps every rejection to an error response.
 - A command that creates or cancels a Booking saves *Booking confirmed* or *Booking cancelled* with the change, in one database transaction, and Places publishes it to the broker afterwards. The specifications call this *queuing* the message: it is queued exactly when the change is saved, so it can't be lost (NFR-4). The Messaging and collaborations section explains how.
 - Every change is seen by the availability checks and searches Places answers after it (NFR-2).

@@ -49,7 +49,7 @@ The Gateway checks each user's token and forwards the request with the user's id
 Places checks every request in three steps:
 
 1. A request that carries neither `X-User-Id` nor `X-Service-Name` is rejected as unauthenticated, with 401 (FR-35).
-2. A user calling an endpoint for Events, or a service calling one that Table \ref{tab:endpoints} doesn't allow it, is rejected as forbidden, with 403.
+2. A user calling an endpoint for Events, or a service calling one that Table \ref{tab:endpoints} doesn't allow it, is rejected as forbidden, with 403 (FR-37).
 3. Where only the Venue's Venue Manager may call the endpoint, Places compares the caller's id with the Venue's Venue Manager, and rejects any other user as forbidden, with 403 (FR-36).
 
 Places takes no roles from the Gateway. Being a Venue Manager is a relation between a user and a Venue, which Places already stores (FR-5), not a kind of user the Gateway must know about, so every check Places makes on a user compares the caller's id with the Venue's Venue Manager. Richardson leaves such checks to the service that owns the data, as when only the consumer who placed an Order may read it, because a gateway can typically check only roles against paths and doesn't know a service's domain [@richardson2018, ch. 11]. Promoter and Venue Manager stay the two classes of user in the Actors table, told apart by the tasks they perform, as Wiegers and Beatty identify user classes, and one user can belong to both [@wiegers2013, ch. 6]. A `venue-manager` role would have gated `submitVenue` alone, and asked G4 to decide who gets it, which nobody had said. Any user may therefore submit a Venue, and becomes its Venue Manager. Someone could list a Venue that doesn't exist, which we accept for delivery 1: Venue approval, left out of it (FR-4), is the fix for a later delivery. Places ignores any `X-User-Roles` header.
@@ -81,7 +81,7 @@ Every rejection that the System operations section names maps to one error respo
 |--------|-----------------------------------|----------------------------------------------------|
 | 400 | `about:blank` | A parameter or the body is malformed or out of range: for instance, a search whose number of days is less than 1 or longer than its window (FR-13), or a Booking request whose last day is before its first day, or whose first day has passed (FR-20). |
 | 401 | `about:blank` | The request names neither a user nor a service (FR-35). |
-| 403 | `about:blank` | A user called an endpoint for Events, a service called one it isn't allowed, or the caller isn't the Venue's Venue Manager (FR-36). |
+| 403 | `about:blank` | A user called an endpoint for Events, a service called one it isn't allowed, or the caller isn't the Venue's Venue Manager (FR-36, FR-37). |
 | 404 | `about:blank` | No Venue or Booking has the id in the path, or the Booking isn't at that Venue. |
 | 409 | `/problems/days-taken` | A Booking of the Venue overlaps the requested days (FR-18). |
 | 409 | `/problems/event-already-booked` | The Event already has a Booking, and the request isn't a Rebooking (FR-19). |

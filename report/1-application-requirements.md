@@ -362,6 +362,7 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 |-------|------------------------------------------------------------------------------|
 | FR-35 | Places shall take the caller's user id from what the Gateway forwards with each user request, and shall reject a user request that carries none as unauthenticated. |
 | FR-36 | Places shall reject as forbidden any change to a Venue (update, unlist, relist or delete), any request for its Bookings, and any cancellation of its Bookings, from a user who is not that Venue's Venue Manager. |
+| FR-37 | Places shall reject as forbidden a Booking request or a cancellation of a Booking by its id from a user, and any request from Events or Tickets for an operation not theirs: Events may search and read Venues, request Bookings and cancel them by id, and Tickets may read a Venue. |
 
 ## Non-functional requirements
 
