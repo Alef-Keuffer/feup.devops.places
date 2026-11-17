@@ -48,7 +48,7 @@ Two invariants hold at all times, even when requests arrive at the same moment. 
 
 ## Operations
 
-Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35 and FR-37, they cover every functional requirement, FR-1 to FR-38. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1].
+Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35 and FR-37, they cover every functional requirement, FR-1 to FR-38. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1]. A query's verb says what it answers with: *get* reads one item by its id and is rejected when there is none, *list* reads every item under a parent, such as a Venue's Bookings, *search* reads every item that matches the filters given, and *find* reads at most one item by something other than its id, and answers with none when there is none.
 
 | Operation | Kind | Actor | Story | Requirements |
 |----------------------------|------------|--------------------------|----------|----------------------------------|
