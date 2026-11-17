@@ -25,9 +25,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the tags and the history to them, for the version report/version.lua prints
-      - uses: pandoc/actions/setup@v1
-        with:
-          version: '3.13'
+      # The release's static binary; installing its .deb spent ~25 s in apt and dpkg.
+      - name: Install pandoc
+        run: gh release download 3.13 --repo jgm/pandoc --pattern '*linux-amd64.tar.gz' --output - | sudo tar -xz -C /usr/local/bin --strip-components 2 pandoc-3.13/bin/pandoc
+        env:
+          GH_TOKEN: ${{ github.token }}
       # Installing takes about a minute, most of it tex-common building every TeX format,
       # so the first run tars the installed files and the formats, and later runs untar them.
       - id: tex
