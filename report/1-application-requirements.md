@@ -263,9 +263,15 @@ Requirements: FR-22, FR-24, FR-32.
 | **When** an overlapping refresh saves 4.2, stamped 10:00, after it
 | **Then** Places keeps 4.4
 
+*Scenario: the last review removed.*
+
+| **Given** a Venue rated 4.4, stamped 10:05
+| **When** a refresh answered at 10:10 no longer lists it, because its last review was removed
+| **Then** the Venue has no Rating, and a search with a minimum Rating leaves it out
+
 *Scenario: Reviews is down.*
 
-| **Given** the same Venue, rated 4.4
+| **Given** a Venue rated 4.4
 | **When** a refresh gets no answer from Reviews
 | **Then** Places keeps 4.4, and searches use it
 
@@ -341,8 +347,8 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 
 | ID | Requirement |
 |-------|------------------------------------------------------------------------------|
-| FR-33 | Every five minutes, Places shall read each Venue's Rating from Reviews, keep it, and use it in search and when returning the Venue. When Reviews doesn't answer, Places shall keep the Rating it holds. |
-| FR-34 | Places shall not replace a Venue's Rating with one stamped earlier than the Rating it holds. |
+| FR-33 | Every five minutes, Places shall read each Venue's Rating from Reviews, keep it, and use it in search and when returning the Venue. A Venue that Reviews no longer lists shall lose its Rating. When Reviews doesn't answer, Places shall keep the Rating it holds. |
+| FR-34 | Places shall not replace a Venue's Rating with one stamped earlier than the Rating it holds, nor clear a Rating stamped later than the answer that no longer lists the Venue. |
 
 #### Access {.unnumbered .unlisted}
 
