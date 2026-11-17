@@ -62,7 +62,7 @@ Sent when
 | `eventId` | UUID | The Event that held it. |
 | `promoterId` | UUID | The Event's Promoter, by user id. |
 | `venueId` | UUID | The Venue that was booked. |
-| `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation, a Rebooking or through *Event cancelled*; `venue-manager` when the Venue's Venue Manager did. The values are those of the `X-Service-Name` and `X-User-Roles` headers (Table \ref{tab:identity}). |
+| `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation, a Rebooking or through *Event cancelled*; `venue-manager` when the Venue's Venue Manager did. `events` is Events' `X-Service-Name` (Table \ref{tab:identity}). |
 | `reason` | string | The reason given, left out when none was. |
 
 : The fields of *Booking cancelled*. \label{tab:booking-cancelled}
@@ -213,7 +213,7 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 
 | # | Flow | What it carries | Why REST or the broker |
 |----|---------------------------|-------------------------------------|--------------------------------------|
-| 1 | Promoter or Venue Manager → Gateway → Places | Every user request, with the user id and roles the Gateway forwards: searches, reading a Venue, availability checks, Venue changes, a Venue's Bookings and their cancellation. | REST. A user waits for the answer. |
+| 1 | Promoter or Venue Manager → Gateway → Places | Every user request, with the user id the Gateway forwards: searches, reading a Venue, availability checks, Venue changes, a Venue's Bookings and their cancellation. | REST. A user waits for the answer. |
 | 2 | Events → Places | Venues (`searchVenues`, `getVenue`), Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
 | 3 | Tickets → Places | A Venue by its id (`getVenue`), for its name and address. | REST. Tickets reads them once per Event, when Events publishes the Event, and Places publishes no messages about Venues that Tickets could keep a copy from. |
 | 4 | Events → Log topic → Places | *Event cancelled* (`handleEventCancelled`). | Broker. Events states the fact once for every group that cares, and needs no answer. |

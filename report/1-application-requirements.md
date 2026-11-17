@@ -30,7 +30,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 | Events (G2) | Service | Read Venues, book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
 | Reviews (G1) | Service | Nothing. Reviews decides who may rate a Venue and computes each Venue's Rating, which Places reads from it. |
 | Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking, and cancels the bill if the Booking is cancelled before it is paid. Tickets reads a Venue's name and address to print on tickets. |
-| Gateway (G4) | Service | Checks each user's token and forwards the user's id and roles to Places. G4 also runs the message broker. |
+| Gateway (G4) | Service | Checks each user's token and forwards the user's id to Places. G4 also runs the message broker. |
 
 Figure \ref{fig:context} shows these actors around Places in a context diagram [@wiegers2013, ch. 5]. It shows what flows between them, not how: the Service APIs and collaborations section says which flows are REST calls and which are messages through the broker.
 
@@ -53,7 +53,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
 
   \draw[flow] (promoter) -- node[label, left] {searches,\\availability checks} (gateway);
   \draw[flow] (manager) -- node[label, left] {Venue changes,\\Booking lists,\\cancellations} (gateway);
-  \draw[flow] (gateway) -- node[label, above] {requests with\\user id and roles} (places);
+  \draw[flow] (gateway) -- node[label, above] {requests with\\user id} (places);
 
   \draw[flow] ([xshift=-4mm]events.south) -- node[label, left] {Venue reads,\\Booking requests,\\Booking cancellations,\\\emph{Event cancelled}} ([xshift=-4mm]places.north);
   \draw[flow] ([xshift=4mm]places.north) -- node[label, right] {\emph{Booking cancelled}} ([xshift=4mm]events.south);
@@ -159,18 +159,18 @@ Requirements: FR-16, FR-19, FR-22, FR-23, FR-25 to FR-27, FR-30 to FR-32.
 
 *Scenario: the Venue is Listed at once.*
 
-| **Given** a user with the Venue Manager role
+| **Given** a user
 | **When** they submit a Venue of type auditorium with three Rooms
 | **Then** the Venue is Listed and appears in search straight away, with 3 Rooms
 | **And** that user is its Venue Manager
 
 *Scenario: an unknown type.*
 
-| **Given** a user with the Venue Manager role
+| **Given** a user
 | **When** they submit a Venue of type "barn"
 | **Then** Places rejects the submission
 
-Requirements: FR-1 to FR-5, FR-35, FR-36.
+Requirements: FR-1 to FR-5, FR-35.
 
 **US-6 Keep a Venue up to date.** As a Venue Manager, I want to change my Venue's description, Rooms and price per day, so that Promoters see current information.
 
@@ -187,7 +187,7 @@ Requirements: FR-1 to FR-5, FR-35, FR-36.
 | **When** any other user tries to change it
 | **Then** Places refuses the change as forbidden
 
-Requirements: FR-6, FR-22, FR-37, FR-38.
+Requirements: FR-6, FR-22, FR-36.
 
 **US-7 Take a Venue out of search.** As a Venue Manager, I want to unlist my Venue and relist it later, so that it takes no new Bookings while I can't host Events.
 
@@ -204,7 +204,7 @@ Requirements: FR-6, FR-22, FR-37, FR-38.
 | **When** its Venue Manager relists it
 | **Then** it appears in search again and accepts Booking requests
 
-Requirements: FR-7, FR-8, FR-37.
+Requirements: FR-7, FR-8, FR-36.
 
 **US-8 Remove a Venue.** As a Venue Manager, I want to delete a Venue I no longer offer, so that it leaves the platform.
 
@@ -220,7 +220,7 @@ Requirements: FR-7, FR-8, FR-37.
 | **When** its Venue Manager tries to delete it
 | **Then** Places refuses, and the Venue and its Booking stay
 
-Requirements: FR-9, FR-37.
+Requirements: FR-9, FR-36.
 
 **US-9 Cancel a Booking at my Venue.** As a Venue Manager, I want to see my Venue's Bookings and cancel one when something unforeseen happens, so that the Promoter learns in time that the Venue is no longer theirs on those days.
 
@@ -237,7 +237,7 @@ Requirements: FR-9, FR-37.
 | **When** a user who is not its Venue Manager asks for its Bookings
 | **Then** Places refuses as forbidden
 
-Requirements: FR-28 to FR-32, FR-37.
+Requirements: FR-28 to FR-32, FR-36.
 
 **US-10 Bill a Booking.** As Billing (G3), I want to learn about each new Booking and its amount, so that I can bill the Promoter without knowing Venue prices.
 
@@ -301,7 +301,7 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 
 | ID | Requirement |
 |-------|------------------------------------------------------------------------------|
-| FR-1 | Places shall let a user with the Venue Manager role submit a Venue with: a name; an address, including its city; coordinates (latitude and longitude); a capacity in persons; an area in square metres; a price per day in EUR; a type; images; equipment, as items with quantities; and Rooms. |
+| FR-1 | Places shall let a user submit a Venue with: a name; an address, including its city; coordinates (latitude and longitude); a capacity in persons; an area in square metres; a price per day in EUR; a type; images; equipment, as items with quantities; and Rooms. |
 | FR-2 | Places shall accept only these Venue types: open-air, stadium, pavilion, auditorium, conference centre, other. |
 | FR-3 | Places shall keep each Room with a name, a capacity, an area and a layout image, and no price, and shall give a Venue's number of Rooms as the count of its Rooms. |
 | FR-4 | Places shall make a submitted Venue Listed at once, with no approval step. |
@@ -360,10 +360,8 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 
 | ID | Requirement |
 |-------|------------------------------------------------------------------------------|
-| FR-35 | Places shall take the caller's user id and roles from what the Gateway forwards with each user request, and shall reject a user request that carries none as unauthenticated. |
-| FR-36 | Places shall reject as forbidden a Venue submission from a user without the Venue Manager role. |
-| FR-37 | Places shall reject as forbidden any change to a Venue (update, unlist, relist or delete), any request for its Bookings, and any cancellation of its Bookings, from a user who is not that Venue's Venue Manager. |
-| FR-38 | Places shall allow a user who holds both the Promoter and the Venue Manager roles every operation that either role allows. |
+| FR-35 | Places shall take the caller's user id from what the Gateway forwards with each user request, and shall reject a user request that carries none as unauthenticated. |
+| FR-36 | Places shall reject as forbidden any change to a Venue (update, unlist, relist or delete), any request for its Bookings, and any cancellation of its Bookings, from a user who is not that Venue's Venue Manager. |
 
 ## Non-functional requirements
 
@@ -432,7 +430,7 @@ The following are out of scope. Where another group or a later delivery covers a
 | Cancelling bills, refunds and cancellation fees | Billing (G3) cancels an unpaid bill when *Booking cancelled* arrives. For delivery 1 it refunds no paid bill and charges no fee, whoever cancelled the Booking. |
 | Paying the Venue Manager a Booking's amount | Billing (G3) collects the amount but pays no one out in delivery 1, and keeps `venueManagerId` on each bill. |
 | Deciding who may rate a Venue, and computing Ratings | Reviews (G1), which reads none of Places' messages. Places reads each Venue's Rating from it (FR-33). |
-| Authenticating users | The Gateway (G4) checks the token and forwards the user id and roles (FR-35). |
+| Authenticating users | The Gateway (G4) checks the token and forwards the user id (FR-35). |
 | Acting on *Event scheduled* or *Event ended* | Places ignores them (FR-27). |
 | *Venue updated*, a message telling other groups that a Venue's details changed | Not in delivery 1: Events reads a Venue with `GET /venues/{venueId}` when it needs it. A candidate for a later delivery. |
 | Deploying and operating Places (DevOps operations) | Later deliveries. In this report, "system operations" means the commands and queries Places handles. |

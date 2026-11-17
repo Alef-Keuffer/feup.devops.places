@@ -48,22 +48,22 @@ Two invariants hold at all times, even when requests arrive at the same moment. 
 
 ## Operations
 
-Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35 and FR-38, they cover every functional requirement, FR-1 to FR-38. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1].
+Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35, they cover every functional requirement, FR-1 to FR-36. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1].
 
 | Operation | Kind | Actor | Story | Requirements |
 |----------------------------|------------|--------------------------|----------|----------------------------------|
-| `submitVenue` | Command | Venue Manager | US-5 | FR-1 to FR-5, FR-36 |
-| `updateVenue` | Command | Venue Manager | US-6 | FR-2, FR-5, FR-6, FR-22, FR-37 |
-| `unlistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-37, NFR-2 |
-| `relistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-37, NFR-2 |
-| `deleteVenue` | Command | Venue Manager | US-8 | FR-9, FR-37 |
+| `submitVenue` | Command | Venue Manager | US-5 | FR-1 to FR-5 |
+| `updateVenue` | Command | Venue Manager | US-6 | FR-2, FR-5, FR-6, FR-22, FR-36 |
+| `unlistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-36, NFR-2 |
+| `relistVenue` | Command | Venue Manager | US-7 | FR-7, FR-8, FR-36, NFR-2 |
+| `deleteVenue` | Command | Venue Manager | US-8 | FR-9, FR-36 |
 | `requestBooking` | Command | Events | US-3, US-4, US-10 | FR-8, FR-16 to FR-22, FR-24, FR-30, FR-32, NFR-2 to NFR-4 |
 | `cancelBooking` | Command | Events | US-4 | FR-23, FR-25, FR-30 to FR-32, NFR-2, NFR-4 |
-| `cancelVenueBooking` | Command | Venue Manager | US-9 | FR-29 to FR-32, FR-37, NFR-2, NFR-4 |
+| `cancelVenueBooking` | Command | Venue Manager | US-9 | FR-29 to FR-32, FR-36, NFR-2, NFR-4 |
 | `searchVenues` | Query | Any user, Events | US-1 | FR-8, FR-11 to FR-14, NFR-1, NFR-7 |
 | `checkAvailability` | Query | Any user | US-2 | FR-15, NFR-1, NFR-7 |
 | `getVenue` | Query | Any user, Events, Tickets | US-12 | FR-3, FR-10, FR-33, NFR-7 |
-| `listVenueBookings` | Query | Venue Manager | US-9 | FR-28, FR-37 |
+| `listVenueBookings` | Query | Venue Manager | US-9 | FR-28, FR-36 |
 | `handleEventCancelled` | Command | Events, through the Log topic | US-4 | FR-26, FR-27, FR-30 to FR-32, NFR-4, NFR-5 |
 | `refreshRatings` | Command | Places itself, every five minutes | US-11 | FR-33, FR-34, NFR-7 |
 
@@ -71,7 +71,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 
 These rules apply to every operation, so the specifications below don't repeat them:
 
-- Every operation a user calls carries the caller's user id and roles, which the Gateway forwards. Places rejects a user request without them as unauthenticated (FR-35). The specifications call this user the *caller*. A user who holds both the Promoter and the Venue Manager roles may do everything either role allows (FR-38). `requestBooking` and `cancelBooking` are for Events alone; the REST API section says how Places tells a call from Events apart from a user's.
+- Every operation a user calls carries the caller's user id, which the Gateway forwards. Places rejects a user request without it as unauthenticated (FR-35). The specifications call this user the *caller*. `requestBooking` and `cancelBooking` are for Events alone; the REST API section says how Places tells a call from Events apart from a user's.
 - When a precondition doesn't hold, Places rejects the operation and changes nothing. Where a requirement names the rejection (a conflict, or forbidden), the precondition says so; the REST API section maps every rejection to an error response.
 - A command that creates or cancels a Booking saves *Booking confirmed* or *Booking cancelled* with the change, in one database transaction, and Places publishes it to the broker afterwards. The specifications call this *queuing* the message: it is queued exactly when the change is saved, so it can't be lost (NFR-4). The Messaging and collaborations section explains how.
 - Every change is seen by the availability checks and searches Places answers after it (NFR-2).
@@ -88,8 +88,7 @@ Result
 :   The new Venue's id.
 
 Preconditions
-:   - The caller has the Venue Manager role; otherwise the submission is forbidden (FR-36).
-    - The type is open-air, stadium, pavilion, auditorium, conference centre or other (FR-2).
+:   - The type is open-air, stadium, pavilion, auditorium, conference centre or other (FR-2).
 
 Postconditions
 :   - A Venue exists with the given details and Rooms (FR-1, FR-3).
@@ -107,7 +106,7 @@ Result
 
 Preconditions
 :   - The Venue exists.
-    - The caller is its Venue Manager; otherwise the change is forbidden (FR-37).
+    - The caller is its Venue Manager; otherwise the change is forbidden (FR-36).
     - A new type, if given, is one of those in FR-2.
 
 Postconditions
@@ -125,7 +124,7 @@ Result
 
 Preconditions
 :   - The Venue exists and is Listed (FR-7).
-    - The caller is its Venue Manager; otherwise the change is forbidden (FR-37).
+    - The caller is its Venue Manager; otherwise the change is forbidden (FR-36).
 
 Postconditions
 :   - The Venue is Unlisted: it drops out of search, and Booking requests for it are rejected (FR-8).
@@ -141,7 +140,7 @@ Result
 
 Preconditions
 :   - The Venue exists and is Unlisted (FR-7).
-    - The caller is its Venue Manager; otherwise the change is forbidden (FR-37).
+    - The caller is its Venue Manager; otherwise the change is forbidden (FR-36).
 
 Postconditions
 :   - The Venue is Listed: it appears in search and accepts Booking requests again (FR-7, FR-8).
@@ -156,7 +155,7 @@ Result
 
 Preconditions
 :   - The Venue exists.
-    - The caller is its Venue Manager; otherwise the change is forbidden (FR-37).
+    - The caller is its Venue Manager; otherwise the change is forbidden (FR-36).
     - Every Booking at the Venue has ended (FR-9).
 
 Postconditions
@@ -215,7 +214,7 @@ Result
 
 Preconditions
 :   - The Venue exists.
-    - The caller is its Venue Manager; otherwise the cancellation is forbidden (FR-37).
+    - The caller is its Venue Manager; otherwise the cancellation is forbidden (FR-36).
     - The Booking exists and is at that Venue.
     - It has not ended (FR-30).
 
@@ -283,7 +282,7 @@ Result
 
 Preconditions
 :   - The Venue exists.
-    - The caller is its Venue Manager; otherwise the request is forbidden (FR-37).
+    - The caller is its Venue Manager; otherwise the request is forbidden (FR-36).
 
 Postconditions
 :   - Nothing has changed.
