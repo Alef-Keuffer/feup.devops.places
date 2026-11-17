@@ -392,9 +392,7 @@ paths:
         Returns the Event's Booking, with the fields of `requestBooking`'s
         `201` answer, in a list of at most one item. The list is empty when
         the Event has no Booking. A Booking that has ended is still
-        returned. If Events fails before it saves the id of a Booking that
-        Places created, sending the request again is rejected, so Events
-        reads the Booking here.
+        returned.
 
         **Access:** Events.
       security:

@@ -162,7 +162,7 @@ Preconditions
 Postconditions
 :   - The Venue is removed, together with its Rooms, its Rating and its Bookings, all of which have ended. Operations that name it now fail their first precondition, and `refreshRatings` no longer reads its Rating.
 
-No operation changes a Booking's days (FR-23): Events replaces a Booking with a Rebooking, a `requestBooking` that names the Booking it replaces (FR-19). If Events loses Places' answer, sending the request again is rejected, because the Event now has a Booking (FR-19); Events reads that Booking, and its id, with `findEventBooking` (FR-38).
+No operation changes a Booking's days (FR-23): Events replaces a Booking with a Rebooking, a `requestBooking` that names the Booking it replaces (FR-19). If Events loses Places' answer, sending the request again is rejected (FR-19); Events reads that Booking, and its id, with `findEventBooking` (FR-38).
 
 #### `requestBooking` {.unnumbered .unlisted}
 
@@ -294,7 +294,7 @@ Parameters
 :   An Event id (FR-38).
 
 Result
-:   The Event's Booking, with its id, its Promoter, its Venue, its days and its amount, whether or not it has ended; or no Booking, when the Event has none (FR-38).
+:   The Event's Booking, with its id, its Event, its Promoter, its Venue, its days and its amount, whether or not it has ended; or no Booking, when the Event has none (FR-38).
 
 Preconditions
 :   - The request comes from Events (FR-37).
