@@ -55,7 +55,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
   \draw[flow] (manager) -- node[label, left] {Venue changes,\\Booking lists,\\cancellations} (gateway);
   \draw[flow] (gateway) -- node[label, above] {requests with\\user id and roles} (places);
 
-  \draw[flow] ([xshift=-4mm]events.south) -- node[label, left] {Booking requests,\\Booking cancellations,\\\emph{Event cancelled}} ([xshift=-4mm]places.north);
+  \draw[flow] ([xshift=-4mm]events.south) -- node[label, left] {Venue reads,\\Booking requests,\\Booking cancellations,\\\emph{Event cancelled}} ([xshift=-4mm]places.north);
   \draw[flow] ([xshift=4mm]places.north) -- node[label, right] {\emph{Booking cancelled}} ([xshift=4mm]events.south);
 
   \draw[flow] (reviews) -- node[label, above] {Venue Ratings} (places);
