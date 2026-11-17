@@ -48,7 +48,7 @@ Two invariants hold at all times, even when requests arrive at the same moment. 
 
 ## Operations
 
-Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35 and FR-37, they cover every functional requirement, FR-1 to FR-37. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1].
+Table \ref{tab:operations} lists every operation, with the actor that calls it, the user story it comes from, and the requirements it implements. With the rules that follow the table, which carry FR-35 and FR-37, they cover every functional requirement, FR-1 to FR-38. Richardson's tables of commands and queries follow the same shape [@richardson2018, sec. 2.2.1]. A query's verb says what it answers with: *get* reads one item by its id and is rejected when there is none, *list* reads every item under a parent, such as a Venue's Bookings, *search* reads every item that matches the filters given, and *find* reads at most one item by something other than its id, and answers with none when there is none.
 
 | Operation | Kind | Actor | Story | Requirements |
 |----------------------------|------------|--------------------------|----------|----------------------------------|
@@ -64,6 +64,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 | `checkAvailability` | Query | Any user | US-2 | FR-15, NFR-1, NFR-7 |
 | `getVenue` | Query | Any user, Events, Tickets | US-12 | FR-3, FR-10, FR-33, NFR-7 |
 | `listVenueBookings` | Query | Venue Manager | US-9 | FR-28, FR-36 |
+| `findEventBooking` | Query | Events | US-4 | FR-38 |
 | `handleEventCancelled` | Command | Events, through the Log topic | US-4 | FR-26, FR-27, FR-30 to FR-32, NFR-4, NFR-5 |
 | `refreshRatings` | Command | Places itself, every five minutes | US-11 | FR-33, FR-34, NFR-7 |
 
@@ -71,7 +72,7 @@ Table \ref{tab:operations} lists every operation, with the actor that calls it, 
 
 These rules apply to every operation, so the specifications below don't repeat them:
 
-- Every operation a user calls carries the caller's user id, which the Gateway forwards. Places rejects a user request without it as unauthenticated (FR-35). The specifications call this user the *caller*. `requestBooking` and `cancelBooking` are for Events alone, and Events and Tickets may call only the operations Table \ref{tab:operations} names them for; Places rejects any other call as forbidden (FR-37). The REST API section says how Places tells a call from Events apart from a user's.
+- Every operation a user calls carries the caller's user id, which the Gateway forwards. Places rejects a user request without it as unauthenticated (FR-35). The specifications call this user the *caller*. `requestBooking`, `findEventBooking` and `cancelBooking` are for Events alone, and Events and Tickets may call only the operations Table \ref{tab:operations} names them for; Places rejects any other call as forbidden (FR-37). The REST API section says how Places tells a call from Events apart from a user's.
 - When a precondition doesn't hold, Places rejects the operation and changes nothing. Where a requirement names the rejection (a conflict, or forbidden), the precondition says so; the REST API section maps every rejection to an error response.
 - A command that creates or cancels a Booking saves *Booking confirmed* or *Booking cancelled* with the change, in one database transaction, and Places publishes it to the broker afterwards. The specifications call this *queuing* the message: it is queued exactly when the change is saved, so it can't be lost (NFR-4). The Messaging and collaborations section explains how.
 - Every change is seen by the availability checks and searches Places answers after it (NFR-2).
@@ -161,7 +162,7 @@ Preconditions
 Postconditions
 :   - The Venue is removed, together with its Rooms, its Rating and its Bookings, all of which have ended. Operations that name it now fail their first precondition, and `refreshRatings` no longer reads its Rating.
 
-No operation changes a Booking's days (FR-23): Events replaces a Booking with a Rebooking, a `requestBooking` that names the Booking it replaces (FR-19).
+No operation changes a Booking's days (FR-23): Events replaces a Booking with a Rebooking, a `requestBooking` that names the Booking it replaces (FR-19). If Events loses Places' answer, sending the request again is rejected (FR-19); Events reads that Booking, and its id, with `findEventBooking` (FR-38).
 
 #### `requestBooking` {.unnumbered .unlisted}
 
@@ -283,6 +284,20 @@ Result
 Preconditions
 :   - The Venue exists.
     - The caller is its Venue Manager; otherwise the request is forbidden (FR-36).
+
+Postconditions
+:   - Nothing has changed.
+
+#### `findEventBooking` {.unnumbered .unlisted}
+
+Parameters
+:   An Event id (FR-38).
+
+Result
+:   The Event's Booking, with its id, its Event, its Promoter, its Venue, its days and its amount, whether or not it has ended; or no Booking, when the Event has none (FR-38).
+
+Preconditions
+:   - The request comes from Events (FR-37).
 
 Postconditions
 :   - Nothing has changed.

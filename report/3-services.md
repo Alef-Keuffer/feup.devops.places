@@ -4,10 +4,10 @@ Richardson's second step identifies the services and assigns the system operatio
 
 ## Places is one service
 
-Places is built and deployed as one service, with all fourteen operations of Table \ref{tab:operations} and one database (NFR-12). The obvious alternative splits it along its two subdomains [@richardson2018, sec. 2.2.3]:
+Places is built and deployed as one service, with all fifteen operations of Table \ref{tab:operations} and one database (NFR-12). The obvious alternative splits it along its two subdomains [@richardson2018, sec. 2.2.3]:
 
 - a *Venue Catalogue* service, with the Venues, their Rooms, whether each is Listed, and its Rating: `submitVenue`, `updateVenue`, `unlistVenue`, `relistVenue`, `deleteVenue`, `getVenue` and `refreshRatings`;
-- a *Booking* service, with the Bookings, availability and the messages about Bookings: `requestBooking`, `cancelBooking`, `cancelVenueBooking`, `listVenueBookings`, `checkAvailability` and `handleEventCancelled`.
+- a *Booking* service, with the Bookings, availability and the messages about Bookings: `requestBooking`, `cancelBooking`, `cancelVenueBooking`, `listVenueBookings`, `findEventBooking`, `checkAvailability` and `handleEventCancelled`.
 
 `searchVenues` fits in neither, because it filters on a Venue's details and on its free days at once. We rejected the split because several operations need Venues and Bookings in one transaction or one query. Table \ref{tab:split} compares what they cost in each design.
 
