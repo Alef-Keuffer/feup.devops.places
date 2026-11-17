@@ -427,7 +427,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BookingRequest'
+              allOf:
+                - $ref: '#/components/schemas/BookingRequest'
+                - type: object
+                  properties:
+                    replacesBookingId:
+                      type: string
+                      format: uuid
+                      description: >-
+                        For a Rebooking: the Event's current Booking, which
+                        Places cancels in the same transaction that creates
+                        the new one.
       responses:
         '201':
           description: The Booking was created.
@@ -489,8 +499,8 @@ paths:
       operationId: cancelBooking
       summary: Cancel an Event's Booking
       description: |
-        Cancels the Booking and answers only once its days are free, so a
-        Booking request sent straight after can take them. Places publishes
+        Cancels the Booking and answers only once its days are free. To
+        replace a Booking, Events sends a Rebooking instead. Places publishes
         *Booking cancelled*, saying that Events cancelled it, with the
         reason if one was given.
 
@@ -794,12 +804,6 @@ components:
         lastDay:
           $ref: '#/components/schemas/Day'
           description: Not before `firstDay`.
-        replacesBookingId:
-          type: string
-          format: uuid
-          description: >-
-            For a Rebooking: the Event's current Booking, which Places
-            cancels in the same transaction that creates the new one.
     Booking:
       allOf:
         - $ref: '#/components/schemas/BookingRequest'

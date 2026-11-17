@@ -132,7 +132,7 @@ Requirements: FR-16 to FR-24.
 
 | **Given** an Event booked at a Venue on 6–8 June 2027
 | **When** Events sends a Booking request for the same Event and Venue on 7–9 June 2027 that names the Event's Booking as the one it replaces
-| **Then** Places cancels the old Booking and creates the new one in one transaction, because the old Booking doesn't count against the new days
+| **Then** the request succeeds, because the old Booking doesn't count against the new days, and Places cancels the old Booking and creates the new one in one transaction
 | **And** Places publishes *Booking cancelled*, then *Booking confirmed*
 
 *Scenario: a Rebooking that fails.*
@@ -329,7 +329,7 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 | FR-16 | Places shall accept a Booking request from Events that names an Event, its Promoter, a Venue, and a first and a last day, both included, and, for a Rebooking, the Event's Booking it replaces. |
 | FR-17 | Places shall reject a Booking request for a Venue that is Unlisted or does not exist. |
 | FR-18 | Places shall reject a Booking request as a conflict when a Booking for the same Venue overlaps any of its days. |
-| FR-19 | Places shall reject a Booking request for an Event that already has a Booking, unless it is a Rebooking that names that Booking. A Rebooking shall cancel that Booking and create the new one in one transaction, so that either both happen or nothing changes. |
+| FR-19 | Places shall reject a Booking request for an Event that already has a Booking, unless the request is a Rebooking that names that Booking, which Places then cancels in the transaction that creates the new one, so that either both happen or nothing changes. |
 | FR-20 | Places shall reject a Booking request whose last day is before its first day, or whose first day is before today in the Europe/Lisbon time zone. |
 | FR-21 | Places shall not check a Booking request against the Venue's capacity. |
 | FR-22 | Places shall set a Booking's amount, when it creates the Booking, to its number of days × the Venue's price per day, and shall not change the amount when the price changes later. |

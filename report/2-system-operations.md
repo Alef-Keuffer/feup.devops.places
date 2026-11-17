@@ -202,7 +202,7 @@ Preconditions
     - It has not ended (FR-30).
 
 Postconditions
-:   - The Booking is removed and its days are free, so a Booking request that Events sends as soon as Places answers can take them (FR-31, US-4).
+:   - The Booking is removed and its days are free at once (FR-31).
     - *Booking cancelled* is queued with the Booking, the Event, the Promoter, the Venue, Events as who cancelled it, and the reason if one was given (FR-32, NFR-4).
 
 #### `cancelVenueBooking` {.unnumbered .unlisted}

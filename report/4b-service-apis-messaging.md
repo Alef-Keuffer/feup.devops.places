@@ -132,7 +132,7 @@ The professor expects Places to emit a billing for each Booking: something that 
 
 When *Booking cancelled* arrives, Billing cancels the Booking's bill if the Promoter hasn't paid it yet, and refunds no paid bill, whoever cancelled the Booking. G3 has told us this is deliberate for delivery 1. The Open points section says what it means when a Venue Manager cancels.
 
-A Rebooking publishes *Booking cancelled* (`cancelledBy: events`) for the old Booking, then *Booking confirmed* for the new one, both written to the outbox in the transaction that replaces the Booking. Without a link between them, Billing would cancel the old bill only if it were unpaid and bill the new Booking in full, so a Promoter who paid and then postponed would pay twice. *Booking confirmed* therefore carries `replacesBookingId`, and G3 has told us that Billing reads it and carries a paid bill over to the Booking that replaces it.
+A Rebooking publishes *Booking cancelled* (`cancelledBy: events`) for the old Booking, then *Booking confirmed* for the new one, both written to the outbox in the transaction that replaces the Booking. Without a link between them, Billing would cancel the old bill only if it were unpaid and bill the new Booking in full, so a Promoter who paid and then postponed would pay twice. *Booking confirmed* therefore carries `replacesBookingId`, and G3 has told us that Billing reads it and carries the old Booking's paid bill over to the new Booking.
 
 ### Reliable delivery
 
