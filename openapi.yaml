@@ -46,7 +46,7 @@ tags:
   - name: Venues
     description: The Venue catalogue, search and availability.
   - name: Bookings
-    description: Booking requests and cancellations, and a Venue's Bookings.
+    description: Booking requests and cancellations, an Event's Booking, and a Venue's Bookings.
 paths:
   /venues:
     get:
@@ -384,6 +384,44 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /bookings:
+    get:
+      tags: [Bookings]
+      operationId: findEventBooking
+      summary: Read an Event's Booking
+      description: |
+        Returns the Event's Booking, with the fields of `requestBooking`'s
+        `201` answer, in a list of at most one item. The list is empty when
+        the Event has no Booking. A Booking that has ended is still
+        returned. If Events fails before it saves the id of a Booking that
+        Places created, sending the request again is rejected, so Events
+        reads the Booking here.
+
+        **Access:** Events.
+      security:
+        - service: [events]
+      parameters:
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The Event's Booking, or an empty list.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 1
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       tags: [Bookings]
       operationId: requestBooking
@@ -402,6 +440,9 @@ paths:
         any rejection leaves it standing. Places publishes *Booking
         cancelled* for the old Booking, then *Booking confirmed* for the
         new one, with `replacesBookingId`.
+
+        If Events loses the `201`, it reads the new Booking with
+        `findEventBooking`.
 
         **Access:** Events.
       security:

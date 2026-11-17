@@ -214,7 +214,7 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 | # | Flow | What it carries | Why REST or the broker |
 |----|---------------------------|-------------------------------------|--------------------------------------|
 | 1 | Promoter or Venue Manager → Gateway → Places | Every user request, with the user id the Gateway forwards: searches, reading a Venue, availability checks, Venue changes, a Venue's Bookings and their cancellation. | REST. A user waits for the answer. |
-| 2 | Events → Places | Venues (`searchVenues`, `getVenue`), Booking requests (`requestBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
+| 2 | Events → Places | Venues (`searchVenues`, `getVenue`), Booking requests (`requestBooking`), an Event's Booking (`findEventBooking`) and Booking cancellations (`cancelBooking`). | REST. Events needs each answer before it goes on, for the reasons the REST API section gives. |
 | 3 | Tickets → Places | A Venue by its id (`getVenue`), for its name and address. | REST. Tickets reads them once per Event, when Events publishes the Event, and Places publishes no messages about Venues that Tickets could keep a copy from. |
 | 4 | Events → Log topic → Places | *Event cancelled* (`handleEventCancelled`). | Broker. Events states the fact once for every group that cares, and needs no answer. |
 | 5 | Places → Reviews | Every Venue's Rating, in one call every five minutes (`refreshRatings`). | REST. Each refresh reads every Rating again, so a refresh that fails is put right by the next. Places keeps a copy of the Rating, so search doesn't call Reviews. |

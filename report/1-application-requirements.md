@@ -27,7 +27,7 @@ Wiegers and Beatty separate the classes of people who use a system from the othe
 |----------------|-------------|----------------------------------------------------------|
 | Promoter | User | Find Venues that suit an Event and check their days. Books and cancels through Events. |
 | Venue Manager | User | Submit Venues and keep them up to date, unlist and relist them, see their Bookings, and cancel a Booking when something unforeseen happens. |
-| Events (G2) | Service | Read Venues, book a Venue for an Event and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
+| Events (G2) | Service | Read Venues, book a Venue for an Event, and read and cancel that Booking. Tells Places when an Event is cancelled, and learns when Places cancels a Booking. |
 | Reviews (G1) | Service | Nothing. Reviews decides who may rate a Venue and computes each Venue's Rating, which Places reads from it. |
 | Billing and Tickets (G3) | Service | Billing bills the Promoter for each Booking, and cancels the bill if the Booking is cancelled before it is paid. Tickets reads a Venue's name and address to print on tickets. |
 | Gateway (G4) | Service | Checks each user's token and forwards the user's id to Places. G4 also runs the message broker. |
@@ -55,7 +55,7 @@ Figure \ref{fig:context} shows these actors around Places in a context diagram [
   \draw[flow] (manager) -- node[label, left] {Venue changes,\\Booking lists,\\cancellations} (gateway);
   \draw[flow] (gateway) -- node[label, above] {requests with\\user id} (places);
 
-  \draw[flow] ([xshift=-4mm]events.south) -- node[label, left] {Venue reads,\\Booking requests,\\Booking cancellations,\\\emph{Event cancelled}} ([xshift=-4mm]places.north);
+  \draw[flow] ([xshift=-4mm]events.south) -- node[label, left] {Venue reads,\\Booking requests,\\Booking reads,\\Booking cancellations,\\\emph{Event cancelled}} ([xshift=-4mm]places.north);
   \draw[flow] ([xshift=4mm]places.north) -- node[label, right] {\emph{Booking cancelled}} ([xshift=4mm]events.south);
 
   \draw[flow] (reviews) -- node[label, above] {Venue Ratings} (places);
@@ -153,7 +153,13 @@ Requirements: FR-16 to FR-24.
 | **When** *Event cancelled* for that Event arrives, once or twice
 | **Then** Places changes nothing and publishes nothing
 
-Requirements: FR-16, FR-19, FR-22, FR-23, FR-25 to FR-27, FR-30 to FR-32.
+*Scenario: Events lost the answer.*
+
+| **Given** Events sent a Booking request for Event 100 and Places answered `201`, but Events failed before saving the Booking's id
+| **When** Events asks Places for Event 100's Booking
+| **Then** it gets that Booking, with its id
+
+Requirements: FR-16, FR-19, FR-22, FR-23, FR-25 to FR-27, FR-30 to FR-32, FR-38.
 
 **US-5 Submit a Venue.** As a Venue Manager, I want to submit my Venue with its address, capacity, area, price per day, type, equipment, images and Rooms, so that Promoters can find and book it.
 
@@ -341,6 +347,7 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 | ID | Requirement |
 |-------|------------------------------------------------------------------------------|
 | FR-25 | Places shall let Events cancel a Booking by its id, with an optional reason, and shall answer only once the Booking is cancelled. |
+| FR-38 | Places shall let Events read an Event's Booking by the Event's id, and answer with no Booking when the Event has none. |
 | FR-26 | When *Event cancelled* arrives on the Log topic, Places shall cancel that Event's Booking if it has one, and otherwise do nothing. |
 | FR-27 | Places shall ignore *Event scheduled* and every other message on the Log topic. |
 | FR-28 | Places shall let a Venue's Venue Manager list the Venue's Bookings. |
@@ -362,7 +369,7 @@ Each requirement is a single "shall" statement that a test can pass or fail [@wi
 |-------|------------------------------------------------------------------------------|
 | FR-35 | Places shall take the caller's user id from what the Gateway forwards with each user request, and shall reject a user request that carries none as unauthenticated. |
 | FR-36 | Places shall reject as forbidden any change to a Venue (update, unlist, relist or delete), any request for its Bookings, and any cancellation of its Bookings, from a user who is not that Venue's Venue Manager. |
-| FR-37 | Places shall reject as forbidden a Booking request or a cancellation of a Booking by its id from a user, and any request from Events or Tickets for an operation not theirs: Events may search and read Venues, request Bookings and cancel them by id, and Tickets may read a Venue. |
+| FR-37 | Places shall reject as forbidden a Booking request or a cancellation of a Booking by its id from a user, and any request from Events or Tickets for an operation not theirs: Events may search and read Venues, request Bookings, read an Event's Booking and cancel a Booking by its id, and Tickets may read a Venue. |
 
 ## Non-functional requirements
 
