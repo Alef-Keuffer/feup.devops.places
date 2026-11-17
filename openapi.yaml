@@ -664,7 +664,7 @@ components:
       examples: ['800.00']
     VenueType:
       type: string
-      enum: [open-air, stadium, pavilion, auditorium, conference-centre, other]
+      enum: [open-air, stadium, pavilion, auditorium, "conference centre", other]
     VenueDetails:
       type: object
       description: The details of a Venue that its Venue Manager sets.
@@ -768,7 +768,8 @@ components:
               type: number
               description: >-
                 The Venue's Rating, as Places last read it from Reviews (G1).
-                Absent until Places first reads one.
+                Absent until Places first reads one, and again when Reviews
+                no longer lists the Venue.
     Room:
       type: object
       required: [name, capacity, area, layoutImage]

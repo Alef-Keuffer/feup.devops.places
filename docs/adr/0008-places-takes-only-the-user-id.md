@@ -15,7 +15,7 @@ The Gateway (G4) forwards each user's id in `X-User-Id`, and Places takes nothin
 ## Consequences
 
 - Any signed-in user can submit a Venue, and it is Listed at once (FR-4). Someone could list a Venue that doesn't exist, or many of them. We accept this for delivery 1: the role never vetted anyone, and Venue approval, already out of scope, is the fix for a later delivery.
-- FR-36 and FR-38 go, and FR-37 becomes FR-36. FR-1 lets any user submit a Venue, and FR-35 takes only the user id.
+- The requirements then numbered FR-36 and FR-38 go, and the one then numbered FR-37 becomes FR-36. FR-1 lets any user submit a Venue, and FR-35 takes only the user id. Two requirements took the numbers this left: FR-37 states which operations Events and Tickets may call (`docs/grilling/2026-11-16-g4-identity.md`, under "Since the session"), and FR-38 lets Events read an Event's Booking (`docs/grilling/2026-11-17-g2-reply.md`).
 - Places rejects a request with neither `X-User-Id` nor `X-Service-Name` as unauthenticated, with `401`. The Gateway removes those two headers from whatever a user sends, and Places ignores any `X-User-Roles`.
 - The user id must never change and never be given to another user, since Places stores it as a Venue's Venue Manager, and Billing (G3) compares it with `promoterId`. L11 asks G4.
 - *Booking cancelled* keeps `cancelledBy: venue-manager`, which G2 already has (`docs/groups/2026-11-16-g5-to-g2.md`). It says the Venue's Venue Manager cancelled, and no longer echoes a header value.
