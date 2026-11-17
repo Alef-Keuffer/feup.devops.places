@@ -4,7 +4,7 @@ Delivery 1 leaves some points open, and this section collects them: what Billing
 
 ## Paid bills are not refunded
 
-Billing (G3) creates the bill from *Booking confirmed*, and cancels it on *Booking cancelled* if the Promoter hasn't paid it yet. A paid bill is not refunded, whoever cancelled the Booking; G3 has told us this is deliberate for delivery 1. It matters most when a Venue Manager cancels after the Promoter has paid: the Promoter has lost both the Venue and the amount. Places can't change this on its own, because bills belong to Billing (Table \ref{tab:ownership}).
+Billing (G3) creates the bill from *Booking confirmed*, and cancels it on *Booking cancelled* if the Promoter hasn't paid it yet. A paid bill is not refunded, whoever cancelled the Booking; G3 has told us this is deliberate for delivery 1. It matters most when a Venue Manager cancels after the Promoter has paid: the Promoter has lost both the Venue and the amount. Places can't change this on its own, because bills belong to Billing (Table \ref{tab:ownership}). A Rebooking is different: Billing carries the old Booking's paid bill over to the new Booking, so a Promoter who postpones doesn't pay twice.
 
 ## Out of scope for delivery 1
 

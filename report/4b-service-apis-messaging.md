@@ -21,7 +21,7 @@ Producer
 :   Places, from `requestBooking`.
 
 Consumers
-:   Billing (G3), which creates the bill for the Booking.
+:   Billing (G3), which creates the bill for the Booking, and for a Rebooking carries a paid bill over from the Booking it replaces.
 
 Sent when
 :   Places has created a Booking (FR-24). Places saves the message with the Booking and publishes it shortly after, as Reliable delivery below explains.
@@ -37,6 +37,7 @@ Sent when
 | `firstDay` | date | The first day of the Booking. |
 | `lastDay` | date | The last day of the Booking, included. |
 | `amount` | string | The number of days × the Venue's price per day when the Booking was created (FR-22): an amount in EUR as a decimal string with two decimals, such as `"800.00"`. |
+| `replacesBookingId` | UUID | For a Rebooking, the Booking it replaces; left out otherwise. Billing reads it to carry a paid bill over to the new Booking, so that a Promoter who postpones doesn't pay twice. |
 
 : The fields of *Booking confirmed*. \label{tab:booking-confirmed}
 
@@ -46,7 +47,7 @@ Channel
 :   The Places topic.
 
 Producer
-:   Places, from `cancelBooking`, `cancelVenueBooking` and `handleEventCancelled`.
+:   Places, from `cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`, and `requestBooking` for the Booking a Rebooking replaces.
 
 Consumers
 :   Events (G2), which learns that its Event no longer has the Venue; when the Venue Manager cancelled, this message is the only way Events learns it. Billing (G3), which cancels the Booking's bill if the Promoter hasn't paid it yet.
@@ -61,7 +62,7 @@ Sent when
 | `eventId` | UUID | The Event that held it. |
 | `promoterId` | UUID | The Event's Promoter, by user id. |
 | `venueId` | UUID | The Venue that was booked. |
-| `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation or through *Event cancelled*; `venue-manager` when the Venue's Venue Manager did. The values are those of the `X-Service-Name` and `X-User-Roles` headers (Table \ref{tab:identity}). |
+| `cancelledBy` | string | `events` when Events cancelled it, with a Booking cancellation, a Rebooking or through *Event cancelled*; `venue-manager` when the Venue's Venue Manager did. The values are those of the `X-Service-Name` and `X-User-Roles` headers (Table \ref{tab:identity}). |
 | `reason` | string | The reason given, left out when none was. |
 
 : The fields of *Booking cancelled*. \label{tab:booking-cancelled}
@@ -131,6 +132,8 @@ The professor expects Places to emit a billing for each Booking: something that 
 
 When *Booking cancelled* arrives, Billing cancels the Booking's bill if the Promoter hasn't paid it yet, and refunds no paid bill, whoever cancelled the Booking. G3 has told us this is deliberate for delivery 1. The Open points section says what it means when a Venue Manager cancels.
 
+A Rebooking publishes *Booking cancelled* (`cancelledBy: events`) for the old Booking, then *Booking confirmed* for the new one, both written to the outbox in the transaction that replaces the Booking. Without a link between them, Billing would cancel the old bill only if it were unpaid and bill the new Booking in full, so a Promoter who paid and then postponed would pay twice. *Booking confirmed* therefore carries `replacesBookingId`, and G3 has told us that Billing reads it and carries the old Booking's paid bill over to the new Booking.
+
 ### Reliable delivery
 
 We assume the broker delivers each message at least once: it keeps a message until the consumer acknowledges it, and delivers it again if no acknowledgement comes, for instance because the consumer stopped while handling it. No message is lost, but one can arrive twice, and a redelivered message can arrive after messages sent later. G3 tells us that G4 runs RabbitMQ, and question L7 asks G4 to confirm it. We propose to every group how to get at-least-once delivery from it. A publisher sends persistent messages and waits for the broker to confirm each one, which RabbitMQ does for a durable queue only once the message is on disk. A consumer reads from a durable queue of its own and acknowledges a message only after handling it, so that RabbitMQ requeues any message whose consumer stops before acknowledging it [@rabbitmq-confirms]. RabbitMQ also confirms a message that matches no queue, and keeps it nowhere, so each consumer must bind its queue before the first message it needs is sent. Nothing below depends on more than at-least-once delivery. Reliability then has two sides: Places must get each of its messages to the broker (NFR-4), and every consumer, Places included, must cope with receiving a message twice (NFR-5, NFR-6).
@@ -156,7 +159,7 @@ The relay adds up to a second between a change and its message. Billing doesn't 
 Richardson gives a consumer two ways to cope with a duplicate: make its handler idempotent, so that handling a message twice has the effect of handling it once, or record the ids of the messages it has handled and discard those it sees again [@richardson2018, sec. 3.3.6]. A Booking is confirmed once and cancelled at most once, so a message's type and Booking id identify it, and consumers need no separate message id. We ask each consumer to key what it keeps on the Booking id.
 
 - **Billing** creates at most one bill per Booking id, so a second *Booking confirmed* for a Booking is dropped, and a second *Booking cancelled* finds the bill already cancelled. If *Booking cancelled* arrives first, Billing must remember the Booking as cancelled, whatever arrives after it, or a late *Booking confirmed* would bill a Booking that no longer exists.
-- **Events** reads *Booking cancelled* as news about the Booking it names, not about the Event. Keyed on the Event, a duplicate would do harm: Events cancels an Event's Booking and books again at once (US-4), and a late copy of the first Booking's *Booking cancelled* would then seem to cancel the new one. Keyed on the Booking id, the copy matches no Booking Events holds, and changes nothing.
+- **Events** reads *Booking cancelled* as news about the Booking it names, not about the Event. Keyed on the Event, a duplicate would do harm: a Rebooking replaces an Event's Booking with a new one (US-4), and a late copy of the first Booking's *Booking cancelled* would then seem to cancel the new one. Keyed on the Booking id, the copy matches no Booking Events holds, and changes nothing.
 
 #### Places' handlers are safe to run twice {.unnumbered .unlisted}
 
@@ -216,7 +219,7 @@ Figure \ref{fig:collaborations} draws every flow between Places and the other gr
 | 4 | Events → Log topic → Places | *Event cancelled* (`handleEventCancelled`). | Broker. Events states the fact once for every group that cares, and needs no answer. |
 | 5 | Places → Reviews | Every Venue's Rating, in one call every five minutes (`refreshRatings`). | REST. Each refresh reads every Rating again, so a refresh that fails is put right by the next. Places keeps a copy of the Rating, so search doesn't call Reviews. |
 | 6 | Places → Places topic → Billing | *Booking confirmed* (`requestBooking`). | Broker. A Booking doesn't wait for Billing, and any other group that needs the fact can subscribe. |
-| 7 | Places → Places topic → Events, Billing | *Booking cancelled* (`cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`). | Broker. One message serves both groups, and it tells Events of a Venue Manager's cancellation without Events asking. |
+| 7 | Places → Places topic → Events, Billing | *Booking cancelled* (`cancelBooking`, `cancelVenueBooking`, `handleEventCancelled`, and `requestBooking` for a Rebooking). | Broker. One message serves both groups, and it tells Events of a Venue Manager's cancellation without Events asking. |
 
 : The flows of Figure \ref{fig:collaborations}. \label{tab:flows}
 
