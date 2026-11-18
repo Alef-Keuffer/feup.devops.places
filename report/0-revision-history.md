@@ -2,7 +2,7 @@
 
 # Revision history {.unnumbered}
 
-Wiegers and Beatty ask that each circulated version of a requirements document carry a revision history [@wiegers2013, ch. 27]^["Each circulated version of a requirements document or each requirement in a tool should include a revision history that identifies the changes made, the date of each change, the individual who made the change, and the reason for each change." (p. 460)]. Each version of this report is a tag in the group's repository, and the title page names the version the PDF was built from. Table \ref{tab:revisions} lists each version, when it was released, what changed and why. A draft is for the group's read-through, ahead of `delivery-1`. Who made each change is in the repository's history.
+Wiegers and Beatty ask that each circulated version of a requirements document carry a revision history [@wiegers2013, ch. 27]^["Each circulated version of a requirements document or each requirement in a tool should include a revision history that identifies the changes made, the date of each change, the individual who made the change, and the reason for each change." (p. 460)]. Each version of this report is a tag in the group's repository, and the title page names the version the PDF was built from and gives the repository's address. Table \ref{tab:revisions} lists each version, when it was released, what changed and why. A draft is for the group's read-through, ahead of `delivery-1`. Who made each change is in the repository's history.
 
 | Version | Date | What changed | Why |
 |---------------------------|------------|------------------------------------|-------------------------|
@@ -26,5 +26,6 @@ Wiegers and Beatty ask that each circulated version of a requirements document c
 | `delivery-1-draft-0.2` | 2026-11-17 | Events can read its Event's Booking with the new query `findEventBooking`, `GET /bookings?eventId={eventId}`, under the new FR-38, which takes the number FR-38 left free (Application requirements, System operations, Services, REST API, Messaging and collaborations, `openapi.yaml`). | G2 asked how Events recovers a Booking if it fails between Places' `201` and saving its Event: sending the request again is rejected, and without the Booking's id Events can't cancel it. |
 | `delivery-1-draft-0.2` | 2026-11-17 | Each citation now carries its verbatim passages, printed as endnotes in a quotations appendix. | Each citation carries its passages so a reader can check a claim against the words it rests on, and a later check can re-read those words. |
 | `delivery-1-draft-0.3` | 2026-11-17 | Each change in the revision history has its own row, and an answered question sits on the row of the change it closes (Revision history). | One row of `delivery-1-draft-0.2` was taller than the page, so its end never appeared, and each change now stands with the reason for that change. |
+| `delivery-1` | 2026-11-18 | The title page gives the repository's address and links the version to its tag. | The report referred to the repository without saying where it is. |
 
 : The versions of this report. \label{tab:revisions}
